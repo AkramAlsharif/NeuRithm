@@ -1,0 +1,428 @@
+﻿@page "/"
+@using Neurithm.Core.Interfaces
+@using Neurithm.Application.DTOs
+@using Neurithm.Core.Models
+@inject ILevelService LevelService
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+
+<PageTitle>Neurithm - Learn Piano Rhythm</PageTitle>
+
+<div class="home-page">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Neurithm</h1>
+            <p class="hero-subtitle">Train piano rhythm with your real instrument.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" @onclick="HandleStartPlaying">Start Playing</button>
+                <button class="btn btn-secondary" @onclick="HandleCalibrate">Calibrate Microphone</button>
+                <button class="btn btn-secondary" @onclick="HandleLevelSelect">Choose Level</button>
+                <button class="btn btn-secondary" @onclick="HandleProfile">Profile</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Allow Microphone Access</h3>
+                <p>Grant permission for your browser to access the microphone.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Play Your Real Piano</h3>
+                <p>Use a real physical piano or keyboard connected to your microphone.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Match Falling Notes</h3>
+                <p>Play notes at the right time as they fall to the hit line.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Improve Your Skills</h3>
+                <p>Build timing and tempo control through adaptive difficulty.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Modes Preview -->
+    <section class="game-modes">
+        <h2>Game Modes</h2>
+        <div class="modes-grid">
+            <div class="mode-card">
+                <h3>Practice Mode</h3>
+                <p>Slower tempo and forgiving timing windows. Perfect for beginners.</p>
+            </div>
+            <div class="mode-card">
+                <h3>Level Mode</h3>
+                <p>Normal scoring with challenging sequences.</p>
+            </div>
+            <div class="mode-card">
+                <h3>Calibration Mode</h3>
+                <p>Fine-tune your microphone and understand your instrument's response.</p>
+            </div>
+            <div class="mode-card">
+                <h3>Free Play Mode</h3>
+                <p>Play any notes without scoring. Great for exploring.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Stats -->
+    @if (selectedProfile != null)
+    {
+        <section class="quick-stats">
+            <h2>Your Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Score</div>
+                    <div class="stat-value">@selectedProfile.TotalScore</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Best Combo</div>
+                    <div class="stat-value">@selectedProfile.BestCombo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg. Accuracy</div>
+                    <div class="stat-value">@selectedProfile.AverageAccuracy.ToString("F1")%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Levels Complete</div>
+                    <div class="stat-value">@selectedProfile.TotalCompletedLevels</div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Status Panel -->
+    <section class="status-panel">
+        <h2>System Status</h2>
+        <div class="status-items">
+            <div class="status-item">
+                <span class="status-label">Profile</span>
+                <span class="status-value">
+                    @if (selectedProfile != null)
+                    {
+                        <span>@selectedProfile.DisplayName</span>
+                    }
+                    else
+                    {
+                        <span class="status-warning">No profile selected</span>
+                    }
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Available Levels</span>
+                <span class="status-value">@availableLevelsCount</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Microphone</span>
+                <span class="status-value status-pending">Ready to calibrate</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private ProfileSummaryDto? selectedProfile;
+    private int availableLevelsCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get available levels
+            var levels = await LevelService.GetAllLevelsAsync();
+            availableLevelsCount = levels.Count();
+
+            // Try to get the most recently used profile
+            var profiles = await ProfileService.GetAllProfilesAsync();
+            if (profiles.Any())
+            {
+                var profile = profiles.FirstOrDefault();
+                if (profile != null)
+                {
+                    selectedProfile = new ProfileSummaryDto
+                    {
+                        Id = profile.Id,
+                        DisplayName = profile.DisplayName,
+                        SelectedAvatarId = profile.SelectedAvatarId,
+                        TotalScore = profile.TotalScore,
+                        BestCombo = profile.BestCombo,
+                        AverageAccuracy = profile.AverageAccuracy,
+                        TotalCompletedLevels = profile.TotalCompletedLevels
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading home page data: {ex.Message}");
+        }
+    }
+
+    private void HandleStartPlaying()
+    {
+        if (selectedProfile == null)
+        {
+            Navigation.NavigateTo("/profile");
+        }
+        else
+        {
+            Navigation.NavigateTo("/level-selector");
+        }
+    }
+
+    private void HandleCalibrate()
+    {
+        Navigation.NavigateTo("/calibration");
+    }
+
+    private void HandleLevelSelect()
+    {
+        Navigation.NavigateTo("/level-selector");
+    }
+
+    private void HandleProfile()
+    {
+        Navigation.NavigateTo("/profile");
+    }
+}
+
+<style>
+    .home-page {
+        padding: 2rem 0;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 2rem;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 3rem;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+        margin: 0 0 1rem;
+        font-weight: bold;
+    }
+
+    .hero-subtitle {
+        font-size: 1.3rem;
+        margin: 0 0 2rem;
+        opacity: 0.95;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+        background: white;
+        color: #667eea;
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .how-it-works {
+        margin: 3rem 0;
+    }
+
+    .how-it-works h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .step {
+        background: #f9f9f9;
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .step h3 {
+        margin: 1rem 0 0.5rem;
+    }
+
+    .game-modes {
+        margin: 3rem 0;
+    }
+
+    .game-modes h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .modes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .mode-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+    }
+
+    .mode-card h3 {
+        margin: 0 0 1rem;
+    }
+
+    .mode-card p {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .quick-stats {
+        margin: 3rem 0;
+    }
+
+    .quick-stats h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .stat-card {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        border-left: 4px solid #667eea;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .status-panel {
+        margin: 3rem 0;
+        background: #f9f9f9;
+        padding: 2rem;
+        border-radius: 8px;
+    }
+
+    .status-panel h2 {
+        margin-top: 0;
+        font-size: 1.5rem;
+    }
+
+    .status-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem;
+        background: white;
+        border-radius: 4px;
+        border-left: 3px solid #667eea;
+    }
+
+    .status-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .status-value {
+        color: #667eea;
+        font-weight: 500;
+    }
+
+    .status-warning {
+        color: #ff6b6b;
+    }
+
+    .status-pending {
+        color: #ffc107;
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>

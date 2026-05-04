@@ -1,0 +1,256 @@
+@page "/settings"
+@inject NavigationManager Navigation
+
+<PageTitle>Settings - Neurithm</PageTitle>
+
+<div class="settings-page">
+    <div class="page-header">
+        <h1>Settings</h1>
+        <button class="btn btn-secondary" @onclick="GoBack">← Back</button>
+    </div>
+
+    <div class="settings-container">
+        <section class="settings-section">
+            <h2>Display</h2>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" @bind="reduceAnimations" />
+                    Reduce Animations (for accessibility)
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" @bind="largeNoteLabels" />
+                    Larger Note Labels
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" @bind="highContrast" />
+                    High Contrast Mode
+                </label>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Audio</h2>
+            <div class="setting-item">
+                <label for="noiseGate">Noise Gate Sensitivity:</label>
+                <input type="range" id="noiseGate" @bind="noiseGateLevel" min="0" max="100" class="form-control" />
+                <span class="value-label">@noiseGateLevel%</span>
+            </div>
+            <div class="setting-item">
+                <label for="confidence">Confidence Threshold:</label>
+                <input type="range" id="confidence" @bind="confidenceThreshold" min="0" max="100" class="form-control" />
+                <span class="value-label">@confidenceThreshold%</span>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Game</h2>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" @bind="showMetronome" />
+                    Enable Metronome
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" @bind="autoAdvanceLevel" />
+                    Auto-advance to Next Level
+                </label>
+            </div>
+            <div class="setting-item">
+                <label for="difficulty">Default Difficulty:</label>
+                <select id="difficulty" @bind="defaultDifficulty" class="form-control">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>About Neurithm</h2>
+            <p><strong>Version:</strong> 1.0.0 (MVP)</p>
+            <p>
+                <strong>About:</strong> Neurithm is a rhythm-learning piano game where you play a real physical piano. 
+                The app listens through your microphone, detects notes in real-time, and provides feedback.
+            </p>
+            <p>
+                <strong>Learn more:</strong> Visit <a href="https://neurithm.net" target="_blank" rel="noopener noreferrer">neurithm.net</a>
+            </p>
+        </section>
+
+        <div class="actions">
+            <button class="btn btn-primary" @onclick="SaveSettings">Save Settings</button>
+            <button class="btn btn-secondary" @onclick="GoBack">Back</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool reduceAnimations = false;
+    private bool largeNoteLabels = false;
+    private bool highContrast = false;
+    private int noiseGateLevel = 50;
+    private int confidenceThreshold = 50;
+    private bool showMetronome = false;
+    private bool autoAdvanceLevel = false;
+    private string defaultDifficulty = "Beginner";
+
+    private void SaveSettings()
+    {
+        // TODO: Save settings to local storage or profile
+        System.Diagnostics.Debug.WriteLine("Settings saved");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
+
+<style>
+    .settings-page {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .settings-container {
+        display: grid;
+        gap: 2rem;
+    }
+
+    .settings-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-section h2 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 1rem;
+    }
+
+    .setting-item {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f9f9f9;
+        border-radius: 4px;
+    }
+
+    .setting-item label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .setting-item input[type="checkbox"] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+
+    .setting-item input[type="range"] {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .value-label {
+        font-weight: 600;
+        color: #667eea;
+        margin-left: 0.5rem;
+    }
+
+    .settings-section p {
+        margin: 0.5rem 0;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .settings-section a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .settings-section a:hover {
+        text-decoration: underline;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #e8e8e8;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>

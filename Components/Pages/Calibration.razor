@@ -1,0 +1,279 @@
+@page "/calibration"
+@using Neurithm.Audio.Interop
+@inject NavigationManager Navigation
+
+<PageTitle>Calibration - Neurithm</PageTitle>
+
+<div class="calibration-page">
+    <div class="page-header">
+        <h1>Microphone Calibration</h1>
+        <button class="btn btn-secondary" @onclick="GoBack">← Back</button>
+    </div>
+
+    <div class="calibration-container">
+        <section class="calibration-section">
+            <h2>Microphone Permission</h2>
+            <p>Neurithm needs access to your microphone to detect the notes you play.</p>
+            <button class="btn btn-primary" @onclick="RequestMicrophoneAccess">Request Microphone Access</button>
+            <div id="mic-status" class="status-box status-pending">
+                Status: Waiting for permission...
+            </div>
+        </section>
+
+        <section class="calibration-section">
+            <h2>Detected Audio Input</h2>
+            <p>Once you've granted microphone access, the app will show detected pitch information as you play your piano.</p>
+
+            <div class="audio-display">
+                <div class="audio-meter">
+                    <label>Input Volume:</label>
+                    <div class="meter-bar">
+                        <div class="meter-fill" id="volumeMeter"></div>
+                    </div>
+                    <span id="volumeValue">0%</span>
+                </div>
+
+                <div class="detected-note">
+                    <label>Detected Note:</label>
+                    <div id="noteDisplay" class="note-display">--</div>
+                </div>
+
+                <div class="detected-frequency">
+                    <label>Frequency:</label>
+                    <span id="frequencyValue">-- Hz</span>
+                </div>
+
+                <div class="detected-confidence">
+                    <label>Confidence:</label>
+                    <span id="confidenceValue">--%</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="calibration-section">
+            <h2>Calibration Tips</h2>
+            <ul>
+                <li>Use a quiet room to reduce background noise</li>
+                <li>Position your microphone close to the piano (6-12 inches away)</li>
+                <li>Play one note at a time clearly</li>
+                <li>Match the exact frequency by adjusting your A4 tuning in your profile settings</li>
+                <li>Test the calibration by playing a scale</li>
+            </ul>
+        </section>
+
+        <div class="actions">
+            <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/"))">Back to Home</button>
+            <button class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo("/profile"))">Profile Settings</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private async Task RequestMicrophoneAccess()
+    {
+        // Placeholder - in a real implementation, this would call JavaScript interop
+        // to request microphone access and set up audio processing
+        try
+        {
+            // TODO: Implement JavaScript interop for microphone access
+            System.Diagnostics.Debug.WriteLine("Microphone access requested");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error requesting microphone: {ex.Message}");
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
+
+<style>
+    .calibration-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .calibration-container {
+        display: grid;
+        gap: 2rem;
+    }
+
+    .calibration-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .calibration-section h2 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 1rem;
+    }
+
+    .status-box {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+
+    .status-granted {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+
+    .status-denied {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .audio-display {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+    }
+
+    .audio-meter,
+    .detected-note,
+    .detected-frequency,
+    .detected-confidence {
+        margin-bottom: 1rem;
+    }
+
+    .audio-meter label,
+    .detected-note label,
+    .detected-frequency label,
+    .detected-confidence label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .meter-bar {
+        width: 100%;
+        height: 20px;
+        background: #eee;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .meter-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #2ECC71, #F39C12, #E74C3C);
+        transition: width 0.1s ease-out;
+    }
+
+    .note-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        padding: 1rem;
+        background: white;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .detected-frequency span,
+    .detected-confidence span {
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    #volumeValue {
+        margin-left: 0.5rem;
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .calibration-section ul {
+        background: #f0f0f0;
+        padding: 1.5rem 2rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+    }
+
+    .calibration-section li {
+        margin: 0.5rem 0;
+        color: #555;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #e8e8e8;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>

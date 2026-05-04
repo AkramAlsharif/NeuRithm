@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <RootNamespace>Neurithm</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="src\Neurithm.Core\Models" />
+    <Folder Include="src\Neurithm.Core\Interfaces" />
+    <Folder Include="src\Neurithm.Application\Services" />
+    <Folder Include="src\Neurithm.Application\DTOs" />
+    <Folder Include="src\Neurithm.Infrastructure\Repositories" />
+    <Folder Include="App_Data\Levels" />
+    <Folder Include="App_Data\Profiles" />
+    <Folder Include="App_Data\Avatars" />
+    <Folder Include="App_Data\GameHistory" />
+    <Folder Include="App_Data\Settings" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="tests\Neurithm.Tests\Neurithm.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

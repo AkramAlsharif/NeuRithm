@@ -1,0 +1,6 @@
+wwwroot\app.css
+C:\Users\Asaad_AlSharif\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.7\build\..\_framework\blazor.web.js
+C:\Users\Asaad_AlSharif\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.7\build\..\_framework\blazor.server.js
+D:\web\NeuRithm\wwwroot\app.css
+C:\Users\Asaad_AlSharif\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.7\_framework\blazor.web.js
+C:\Users\Asaad_AlSharif\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.7\_framework\blazor.server.js

@@ -1,0 +1,155 @@
+@page "/game/{LevelId}"
+@using Neurithm.Core.Interfaces
+@inject ILevelService LevelService
+@inject NavigationManager Navigation
+
+<PageTitle>Game - Neurithm</PageTitle>
+
+<div class="game-page">
+    @if (level != null)
+    {
+        <div class="game-header">
+            <h1>@level.Title</h1>
+            <button class="btn btn-secondary" @onclick="GoBack">← Back</button>
+        </div>
+
+        <div class="game-container">
+            <div class="game-info">
+                <p><strong>Composer:</strong> @level.Composer</p>
+                <p><strong>BPM:</strong> @level.BPM</p>
+                <p><strong>Notes:</strong> @level.Notes.Count</p>
+                <p><strong>Duration:</strong> @level.GetDurationSeconds().ToString("F0")s</p>
+            </div>
+
+            <div class="game-placeholder">
+                <p>🎵 Game interface coming soon!</p>
+                <p>Microphone input and falling notes visualization will appear here.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="error-message">
+            <p>Level not found.</p>
+            <button class="btn btn-primary" @onclick="GoBack">Back to Levels</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? LevelId { get; set; }
+
+    private Neurithm.Core.Models.GameLevel? level;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(LevelId))
+        {
+            try
+            {
+                level = await LevelService.GetLevelAsync(LevelId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading level: {ex.Message}");
+            }
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/level-selector");
+    }
+}
+
+<style>
+    .game-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .game-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .game-container {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .game-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #f9f9f9;
+        border-radius: 4px;
+        margin-bottom: 2rem;
+    }
+
+    .game-info p {
+        margin: 0;
+    }
+
+    .game-placeholder {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+    }
+
+    .game-placeholder p {
+        margin: 1rem 0;
+        font-size: 1.2rem;
+    }
+
+    .error-message {
+        background: #ffebee;
+        border: 1px solid #ff6b6b;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        color: #d32f2f;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #e8e8e8;
+    }
+</style>

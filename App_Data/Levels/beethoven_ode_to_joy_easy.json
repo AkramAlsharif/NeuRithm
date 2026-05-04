@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "beethoven_ode_to_joy_easy",
+  "title": "Ode to Joy - Easy",
+  "composer": "Ludwig van Beethoven",
+  "difficulty": "Beginner",
+  "bpm": 90,
+  "timeSignature": "4/4",
+  "normalTempoMultiplier": 1.0,
+  "previewText": "A beginner-friendly arrangement of Beethoven's iconic Ode to Joy. Perfect for practicing steady rhythm and finger placement.",
+  "notes": [
+    { "note": "E4", "beat": 0, "durationBeats": 1 },
+    { "note": "E4", "beat": 1, "durationBeats": 1 },
+    { "note": "F4", "beat": 2, "durationBeats": 1 },
+    { "note": "G4", "beat": 3, "durationBeats": 1 },
+    { "note": "G4", "beat": 4, "durationBeats": 1 },
+    { "note": "F4", "beat": 5, "durationBeats": 1 },
+    { "note": "E4", "beat": 6, "durationBeats": 1 },
+    { "note": "D4", "beat": 7, "durationBeats": 1 },
+    { "note": "C4", "beat": 8, "durationBeats": 1 },
+    { "note": "C4", "beat": 9, "durationBeats": 1 },
+    { "note": "D4", "beat": 10, "durationBeats": 1 },
+    { "note": "E4", "beat": 11, "durationBeats": 1 },
+    { "note": "E4", "beat": 12, "durationBeats": 1.5 },
+    { "note": "D4", "beat": 13.5, "durationBeats": 0.5 },
+    { "note": "D4", "beat": 14, "durationBeats": 2 }
+  ]
+}

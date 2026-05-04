@@ -1,0 +1,51 @@
+﻿using NeuRithm.Components;
+using NeuRithm.Application.Services;
+using NeuRithm.Core.Interfaces;
+using NeuRithm.Infrastructure.Repositories;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure app data path
+var appDataPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
+if (!Directory.Exists(appDataPath))
+{
+    Directory.CreateDirectory(appDataPath);
+}
+
+// Add services to the container
+builder.Services.AddRazorComponents();
+
+// Register repositories
+builder.Services.AddSingleton<ILevelRepository>(new FileLevelRepository(appDataPath));
+builder.Services.AddSingleton<IUserProfileRepository>(new FileUserProfileRepository(appDataPath));
+builder.Services.AddSingleton<IAvatarRepository>(new FileAvatarRepository(appDataPath));
+builder.Services.AddSingleton<IGameResultRepository>(new FileGameResultRepository(appDataPath));
+builder.Services.AddSingleton<ISettingsRepository>(new FileSettingsRepository(appDataPath));
+
+// Register application services
+builder.Services.AddSingleton<IPitchDetectionService>(new PitchDetectionService());
+builder.Services.AddSingleton<IGameEngine, GameEngine>();
+builder.Services.AddSingleton<IAdaptiveTempoService, AdaptiveTempoService>();
+builder.Services.AddSingleton<ILevelService, LevelService>();
+builder.Services.AddSingleton<IProfileService, ProfileService>();
+builder.Services.AddSingleton<IAvatarService, AvatarService>();
+builder.Services.AddSingleton<IGameResultService, GameResultService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseHttpsRedirection();
+
+app.UseAntiforgery();
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>();
+
+app.Run();

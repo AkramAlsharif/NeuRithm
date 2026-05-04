@@ -1,0 +1,444 @@
+@page "/profile"
+@using Neurithm.Core.Interfaces
+@using Neurithm.Core.Models
+@inject IProfileService ProfileService
+@inject IAvatarService AvatarService
+@inject NavigationManager Navigation
+
+<PageTitle>Profile - Neurithm</PageTitle>
+
+<div class="profile-page">
+    <h1>Player Profile</h1>
+
+    <!-- Create New Profile Section -->
+    @if (!showExisting)
+    {
+        <section class="create-profile-section">
+            <h2>Create New Profile</h2>
+            <div class="form-group">
+                <label for="displayName">Player Name:</label>
+                <input type="text" id="displayName" @bind="newProfileName" placeholder="Enter your name" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label>Select Avatar:</label>
+                <div class="avatar-grid">
+                    @if (availableAvatars != null)
+                    {
+                        @foreach (var avatar in availableAvatars)
+                        {
+                            <div class="avatar-card" @onclick="@(() => SelectAvatar(avatar.Id))" 
+                                 style="@(selectedAvatarId == avatar.Id ? "border: 3px solid #667eea;" : "")">
+                                <div class="avatar-placeholder" style="background: @(avatar.ThemeColor ?? "#667eea")">
+                                    ♪
+                                </div>
+                                <h4>@avatar.Name</h4>
+                                <p class="avatar-gender">@avatar.Gender</p>
+                                <p class="avatar-desc">@avatar.Description</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" @onclick="CreateProfile">Create Profile</button>
+                @if (profiles.Any())
+                {
+                    <button class="btn btn-secondary" @onclick="@(() => showExisting = true)">Use Existing Profile</button>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Existing Profiles Section -->
+    @if (showExisting && profiles.Any())
+    {
+        <section class="existing-profiles-section">
+            <h2>Select Profile</h2>
+            <div class="profiles-list">
+                @foreach (var profile in profiles)
+                {
+                    <div class="profile-item" @onclick="@(() => SelectProfile(profile))">
+                        <div class="profile-info">
+                            <h3>@profile.DisplayName</h3>
+                            <p>Total Score: @profile.TotalScore</p>
+                            <p>Best Combo: @profile.BestCombo</p>
+                            <p>Accuracy: @profile.AverageAccuracy.ToString("F1")%</p>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn btn-small btn-primary" @onclick="@((e) => { e.StopPropagation(); SelectProfile(profile); })">Select</button>
+                            <button class="btn btn-small btn-danger" @onclick="@((e) => { e.StopPropagation(); DeleteProfile(profile.Id); })">Delete</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="btn btn-secondary" @onclick="@(() => showExisting = false)">Create New Profile</button>
+        </section>
+    }
+
+    <!-- Profile Settings -->
+    @if (currentProfile != null && !showExisting)
+    {
+        <section class="profile-settings">
+            <h2>Profile Settings</h2>
+
+            <div class="settings-grid">
+                <div class="setting-group">
+                    <label for="difficulty">Preferred Difficulty:</label>
+                    <select id="difficulty" @bind="currentProfile.PreferredDifficulty" class="form-control">
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label for="a4">A4 Tuning (Hz):</label>
+                    <input type="number" id="a4" @bind="currentProfile.A4TuningHz" step="0.1" class="form-control" />
+                </div>
+
+                <div class="setting-group">
+                    <label for="sensitivity">Microphone Sensitivity (0-1):</label>
+                    <input type="range" id="sensitivity" @bind="currentProfile.MicrophoneSensitivity" min="0" max="1" step="0.1" class="form-control" />
+                    <span class="value-display">@currentProfile.MicrophoneSensitivity.ToString("F1")</span>
+                </div>
+
+                <div class="setting-group">
+                    <label for="latency">Latency Offset (ms):</label>
+                    <input type="number" id="latency" @bind="currentProfile.LatencyOffsetMs" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" @onclick="SaveProfile">Save Settings</button>
+                <button class="btn btn-secondary" @onclick="@(() => Navigation.NavigateTo("/"))">Back to Home</button>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private List<UserProfile> profiles = new();
+    private UserProfile? currentProfile;
+    private IEnumerable<Avatar>? availableAvatars;
+    private string newProfileName = string.Empty;
+    private string selectedAvatarId = "female_aria";
+    private bool showExisting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            profiles = (await ProfileService.GetAllProfilesAsync()).ToList();
+            availableAvatars = await AvatarService.GetAllAvatarsAsync();
+
+            if (profiles.Any())
+            {
+                currentProfile = profiles.First();
+                selectedAvatarId = currentProfile.SelectedAvatarId;
+                showExisting = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading profiles: {ex.Message}");
+        }
+    }
+
+    private void SelectAvatar(string avatarId)
+    {
+        selectedAvatarId = avatarId;
+    }
+
+    private async Task CreateProfile()
+    {
+        if (string.IsNullOrEmpty(newProfileName))
+        {
+            return;
+        }
+
+        try
+        {
+            currentProfile = await ProfileService.CreateProfileAsync(newProfileName, selectedAvatarId);
+            profiles.Add(currentProfile);
+            newProfileName = string.Empty;
+            showExisting = false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error creating profile: {ex.Message}");
+        }
+    }
+
+    private void SelectProfile(UserProfile profile)
+    {
+        currentProfile = profile;
+        selectedAvatarId = profile.SelectedAvatarId;
+        showExisting = false;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (currentProfile == null) return;
+
+        try
+        {
+            await ProfileService.UpdateProfileAsync(currentProfile);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving profile: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteProfile(string profileId)
+    {
+        try
+        {
+            await ProfileService.DeleteProfileAsync(profileId);
+            profiles.RemoveAll(p => p.Id == profileId);
+            if (currentProfile?.Id == profileId)
+            {
+                currentProfile = null;
+                showExisting = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting profile: {ex.Message}");
+        }
+    }
+}
+
+<style>
+    .profile-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .profile-page h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+    }
+
+    section {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    section h2 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .avatar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .avatar-card {
+        padding: 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .avatar-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .avatar-placeholder {
+        width: 100%;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+
+    .avatar-card h4 {
+        margin: 0.5rem 0;
+        font-size: 1.1rem;
+    }
+
+    .avatar-gender {
+        font-size: 0.85rem;
+        color: #999;
+        margin: 0.25rem 0;
+    }
+
+    .avatar-desc {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0.25rem 0 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #e8e8e8;
+    }
+
+    .btn-small {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-danger {
+        background: #ff6b6b;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #ff5252;
+    }
+
+    .profiles-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .profile-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .profile-item:hover {
+        background: #f0f0f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-info h3 {
+        margin: 0 0 0.5rem;
+    }
+
+    .profile-info p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .profile-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .setting-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .value-display {
+        margin-top: 0.25rem;
+        font-size: 0.9rem;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .profile-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .profile-actions {
+            width: 100%;
+        }
+
+        .profile-actions .btn {
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>

@@ -1,0 +1,208 @@
+﻿namespace Neurithm.Tests;
+
+public class PitchDetectionServiceTests
+{
+    private readonly PitchDetectionService _service = new();
+
+    [Fact]
+    public void FrequencyToNote_A440_ReturnsA4()
+    {
+        var note = _service.FrequencyToNote(440, 0.5, 0);
+
+        Assert.Equal("A4", note.NoteName);
+        Assert.Equal(69, note.MidiNumber);
+    }
+
+    [Fact]
+    public void FrequencyToNote_C262_ReturnsC4()
+    {
+        var note = _service.FrequencyToNote(261.63, 0.5, 0);
+
+        Assert.Equal("C4", note.NoteName);
+    }
+
+    [Fact]
+    public void NoteToFrequency_A4_Returns440()
+    {
+        var freq = _service.NoteToFrequency("A4");
+
+        Assert.Equal(440, freq, 0.1);
+    }
+
+    [Fact]
+    public void ParseNoteName_C4_ReturnsCorrectParts()
+    {
+        var (note, octave) = _service.ParseNoteName("C4");
+
+        Assert.Equal('C', note);
+        Assert.Equal(4, octave);
+    }
+
+    [Fact]
+    public void MidiNumberToNoteName_69_ReturnsA4()
+    {
+        var noteName = _service.MidiNumberToNoteName(69);
+
+        Assert.Equal("A4", noteName);
+    }
+
+    [Fact]
+    public void NoteNameToMidiNumber_A4_Returns69()
+    {
+        var midiNumber = _service.NoteNameToMidiNumber("A4");
+
+        Assert.Equal(69, midiNumber);
+    }
+
+    [Fact]
+    public void FrequencyToNote_ProducesConsistentResults()
+    {
+        var note1 = _service.FrequencyToNote(440, 0.5, 0);
+        var freq = _service.NoteToFrequency(note1.NoteName);
+        var note2 = _service.FrequencyToNote(freq, 0.5, 1000);
+
+        Assert.Equal(note1.NoteName, note2.NoteName);
+    }
+}
+
+public class GameEngineTests
+{
+    private readonly GameEngine _engine = new();
+    private readonly GameTimingSettings _defaultTimingSettings = new();
+    private readonly ScoringSettings _defaultScoringSettings = new();
+
+    [Fact]
+    public void EvaluateHit_PerfectTiming_ReturnsPerfect()
+    {
+        var expectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 };
+        var detectedNote = new Note
+        {
+            NoteName = "C4",
+            MidiNumber = 60,
+            Frequency = 261.63,
+            CentsOffset = 0,
+            Confidence = 0.95,
+            Volume = 0.7,
+            TimestampMs = 0
+        };
+
+        var result = _engine.EvaluateHit(expectedNote, detectedNote, 0, _defaultTimingSettings, _defaultScoringSettings);
+
+        Assert.Equal(HitResult.Perfect, result.Result);
+    }
+
+    [Fact]
+    public void EvaluateHit_NoDetection_ReturnsMiss()
+    {
+        var expectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 };
+
+        var result = _engine.EvaluateHit(expectedNote, null, 0, _defaultTimingSettings, _defaultScoringSettings);
+
+        Assert.Equal(HitResult.Miss, result.Result);
+    }
+
+    [Fact]
+    public void CalculateAccuracy_AllPerfect_Returns100()
+    {
+        var hits = new List<NoteHitResult>
+        {
+            new() { ExpectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "D4", Beat = 1, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "E4", Beat = 2, DurationBeats = 1 }, Result = HitResult.Perfect }
+        };
+
+        var accuracy = _engine.CalculateAccuracy(hits);
+
+        Assert.Equal(100, accuracy);
+    }
+
+    [Fact]
+    public void CalculateAccuracy_WithMisses_ReturnsCorrectPercent()
+    {
+        var hits = new List<NoteHitResult>
+        {
+            new() { ExpectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "D4", Beat = 1, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "E4", Beat = 2, DurationBeats = 1 }, Result = HitResult.Miss }
+        };
+
+        var accuracy = _engine.CalculateAccuracy(hits);
+
+        Assert.Equal(66.66666666666666, accuracy, 2);
+    }
+
+    [Fact]
+    public void ClassifyHit_WithinPerfectWindow_ReturnsPerfect()
+    {
+        var result = _engine.ClassifyHit(30, _defaultTimingSettings);
+
+        Assert.Equal(HitResult.Perfect, result);
+    }
+
+    [Fact]
+    public void GetScoreDelta_Perfect_Returns3()
+    {
+        var delta = _engine.GetScoreDelta(HitResult.Perfect, _defaultScoringSettings);
+
+        Assert.Equal(3, delta);
+    }
+
+    [Fact]
+    public void GetScoreDelta_Miss_ReturnsMinus1()
+    {
+        var delta = _engine.GetScoreDelta(HitResult.Miss, _defaultScoringSettings);
+
+        Assert.Equal(-1, delta);
+    }
+}
+
+public class AdaptiveTempoServiceTests
+{
+    private readonly AdaptiveTempoService _service = new();
+    private readonly AdaptiveTempoSettings _defaultSettings = new();
+
+    [Fact]
+    public void CalculateTempoMultiplier_GoodAccuracy_IncreasesTempo()
+    {
+        var hits = new List<NoteHitResult>
+        {
+            new() { ExpectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "D4", Beat = 1, DurationBeats = 1 }, Result = HitResult.Perfect },
+            new() { ExpectedNote = new LevelNote { NoteName = "E4", Beat = 2, DurationBeats = 1 }, Result = HitResult.Perfect }
+        };
+
+        var newTempo = _service.CalculateTempoMultiplier(hits, 0.9, _defaultSettings);
+
+        Assert.True(newTempo > 0.9);
+    }
+
+    [Fact]
+    public void CalculateTempoMultiplier_WithMisses_DecreasesTempo()
+    {
+        var hits = new List<NoteHitResult>
+        {
+            new() { ExpectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 }, Result = HitResult.Miss },
+            new() { ExpectedNote = new LevelNote { NoteName = "D4", Beat = 1, DurationBeats = 1 }, Result = HitResult.Miss }
+        };
+
+        var newTempo = _service.CalculateTempoMultiplier(hits, 0.9, _defaultSettings);
+
+        Assert.True(newTempo < 0.9);
+    }
+
+    [Fact]
+    public void CalculateTempoMultiplier_RespectsMinimum()
+    {
+        var hits = new List<NoteHitResult>
+        {
+            new() { ExpectedNote = new LevelNote { NoteName = "C4", Beat = 0, DurationBeats = 1 }, Result = HitResult.Miss },
+            new() { ExpectedNote = new LevelNote { NoteName = "D4", Beat = 1, DurationBeats = 1 }, Result = HitResult.Miss },
+            new() { ExpectedNote = new LevelNote { NoteName = "E4", Beat = 2, DurationBeats = 1 }, Result = HitResult.Miss },
+            new() { ExpectedNote = new LevelNote { NoteName = "F4", Beat = 3, DurationBeats = 1 }, Result = HitResult.Miss }
+        };
+
+        var newTempo = _service.CalculateTempoMultiplier(hits, 0.6, _defaultSettings);
+
+        Assert.True(newTempo >= _defaultSettings.MinTempoMultiplier);
+    }
+}
