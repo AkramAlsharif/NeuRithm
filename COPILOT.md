@@ -18,6 +18,8 @@ GitHub Copilot is an AI-powered code completion tool that helps you write code f
 - [x] IIS publish folder set to D:\web\NeuRithm.net for all deployments
 - [x] IIS runtime loading fix applied (publish to root + static file mappings + root default document)
 - [x] Browser microphone permission request implemented on Home page via JS interop service
+- [x] Deterministic IIS publish script added with deployment logs and health checks
+- [x] Publish script corrected to deploy the active solution project path reliably
 
 _This status will be updated after each major step._
 
@@ -28,13 +30,17 @@ _This status will be updated after each major step._
   ```
   D:\web\NeuRithm.net
   ```
-- Always publish using:
+- Always deploy using the script:
   ```powershell
-  dotnet publish src/Neurithm.Web/Neurithm.Web.csproj -c Release -o D:\web\NeuRithm.net
+  powershell -ExecutionPolicy Bypass -File .\scripts\Publish-IIS.ps1
   ```
-- After publish, copy static assets from `D:\web\NeuRithm.net\wwwroot` to `D:\web\NeuRithm.net` so IIS root serves `index.html` and `_framework` directly.
-- Ensure IIS site physical path is set to `D:\web\NeuRithm.net`.
-- Keep root `web.config` with static MIME mappings for `.wasm`, `.webcil`, `.dat`, `.dll`, `.json`, `.woff`, `.woff2`.
+- The script ensures:
+  - fresh publish output from `Neurithm.Web/Neurithm.Web.csproj`
+  - static assets copied to IIS root
+  - correct web.config with MIME mappings
+  - IIS site restart
+  - health checks for `/`, ICU `.dat`, and microphone script
+  - local deployment logs
 
 ---
 

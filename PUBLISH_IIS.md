@@ -5,63 +5,63 @@
 - .NET 10 Hosting Bundle installed ([Download here](https://dotnet.microsoft.com/en-us/download/dotnet/10.0))
 - Administrative access to IIS
 
-## Build & Publish
-1. Open a terminal in your project root:
-   ```powershell
-   dotnet publish src/Neurithm.Web/Neurithm.Web.csproj -c Release -o ./publish
-   ```
-2. The output will be in the `publish` folder.
+## Build & Publish (Recommended)
+Use the project publish script from repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Publish-IIS.ps1
+```
+
+This script performs all required deployment steps:
+- Publishes `Neurithm.Web/Neurithm.Web.csproj` to `D:\web\NeuRithm.net`
+- Copies `wwwroot` assets to IIS root for correct static routing
+- Writes IIS-compatible `web.config`
+- Restarts IIS site `neurithm.net`
+- Runs file checks for:
+  - `index.html`
+  - `_framework\icudt_EFIGS.tptq2av103.dat`
+  - `js\microphone.js`
+- Runs HTTP health checks for:
+  - `/`
+  - `/_framework/icudt_EFIGS.tptq2av103.dat`
+  - `/js/microphone.js`
+- Writes deployment logs to:
+  - `./logs/iis-deploy.log`
+  - `D:\web\NeuRithm.net\deployment-status.log`
 
 ## IIS Site Setup
 1. Open IIS Manager.
-2. Add a new Website:
-   - **Site name:** Neurithm
-   - **Physical path:** `D:\web\NeuRithm\publish`
+2. Add or edit the website:
+   - **Site name:** neurithm.net
+   - **Physical path:** `D:\web\NeuRithm.net`
    - **Binding hostname:** `neurithm.net` (and/or `www.neurithm.net`)
-   - **Port:** 80 (HTTP), 443 (HTTPS, recommended)
+   - **Port:** 80 (HTTP), 443 (HTTPS recommended)
    - **Application pool:** No Managed Code
-3. Ensure `web.config` is present in the publish folder.
-4. Start the site.
+3. Ensure site is started.
 
 ## Local Domain Setup (for development)
-1. Edit your hosts file (`C:\Windows\System32\drivers\etc\hosts`):
+1. Edit hosts file (`C:\Windows\System32\drivers\etc\hosts`):
    ```
    127.0.0.1 neurithm.net
    127.0.0.1 www.neurithm.net
    ```
-2. Save and close the file.
+2. Save and close.
 
 ## HTTPS Setup (Recommended)
-- Add an HTTPS binding in IIS and select a certificate.
-- For local development, you can use a self-signed certificate.
-- Browsers require HTTPS for microphone access.
-
-## Environment & Configuration
-- Use `appsettings.json` for environment, file storage root, game settings, and audio settings.
-- Example:
-  ```json
-  {
-    "FileStorageOptions": {
-      "RootPath": "App_Data"
-    },
-    "AudioOptions": {
-      "A4Tuning": 440,
-      "MicSensitivity": "Normal"
-    }
-  }
-  ```
-
-## Publish Command
-- To publish for IIS:
-  ```powershell
-  dotnet publish -c Release -o ./publish
-  ```
+- Add HTTPS binding in IIS and select certificate.
+- Browsers typically require HTTPS for microphone access.
 
 ## Troubleshooting
-- If you see a 500 error, check the Windows Event Viewer and the `logs` folder in your publish directory.
-- Make sure the .NET Hosting Bundle is installed on the IIS server.
-- Ensure the Application Pool is set to **No Managed Code**.
+- If app hangs at loading 100%, verify ICU file loads:
+  - `http://neurithm.net/_framework/icudt_EFIGS.tptq2av103.dat`
+- If this URL is not `200`, re-run:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\scripts\Publish-IIS.ps1
+  ```
+- Check logs:
+  - `./logs/iis-deploy.log`
+  - `D:\web\NeuRithm.net\deployment-status.log`
 
 ---
 
-For more details, see the README and COPILOT.md.
+For more details, see `README.md` and `COPILOT.md`.
