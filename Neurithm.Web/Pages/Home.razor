@@ -1,0 +1,74 @@
+﻿@page "/"
+@using Neurithm.Audio
+@inject IMicrophoneService MicrophoneService
+
+<PageTitle>Neurithm</PageTitle>
+
+<h1>Neurithm</h1>
+<p class="lead">Train piano rhythm with your real instrument.</p>
+
+<div class="hero-buttons d-flex gap-2 flex-wrap">
+    <button class="btn btn-primary">Start Playing</button>
+    <button class="btn btn-secondary" @onclick="RequestMicrophoneAccessAsync">Calibrate Microphone</button>
+    <button class="btn btn-info">Choose Level</button>
+    <button class="btn btn-outline-dark">Profile</button>
+</div>
+
+<section class="mt-3">
+    <strong>Microphone status:</strong>
+    <span>@microphonePermissionStatus</span>
+</section>
+
+<!-- How it works section -->
+<section>
+    <h2>How it works</h2>
+    <ol>
+        <li>Allow microphone access.</li>
+        <li>Play your real piano.</li>
+        <li>Match falling notes at the hit line.</li>
+        <li>Improve timing and tempo control.</li>
+    </ol>
+</section>
+
+<!-- Game modes preview -->
+<section>
+    <h2>Game Modes</h2>
+    <ul>
+        <li>Practice Mode</li>
+        <li>Level Mode</li>
+        <li>Calibration Mode</li>
+        <li>Free Play Mode</li>
+    </ul>
+</section>
+
+<!-- Quick stats preview (placeholder) -->
+<section>
+    <h2>Quick Stats</h2>
+    <ul>
+        <li>Last score: --</li>
+        <li>Best combo: --</li>
+        <li>Accuracy: --</li>
+        <li>Current selected character: --</li>
+    </ul>
+</section>
+
+<!-- System status panel (placeholder) -->
+<section>
+    <h2>System Status</h2>
+    <ul>
+        <li>Microphone permission: @microphonePermissionStatus</li>
+        <li>Calibration status: --</li>
+        <li>Selected profile: --</li>
+        <li>Available levels: --</li>
+    </ul>
+</section>
+
+@code {
+    private string microphonePermissionStatus = "Not requested";
+
+    private async Task RequestMicrophoneAccessAsync()
+    {
+        var granted = await MicrophoneService.RequestPermissionAsync();
+        microphonePermissionStatus = granted ? "Granted" : "Denied";
+    }
+}

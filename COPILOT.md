@@ -17,6 +17,7 @@ GitHub Copilot is an AI-powered code completion tool that helps you write code f
 - [x] IIS publish and deployment documentation added (PUBLISH_IIS.md)
 - [x] IIS publish folder set to D:\web\NeuRithm.net for all deployments
 - [x] IIS runtime loading fix applied (publish to root + static file mappings + root default document)
+- [x] Browser microphone permission request implemented on Home page via JS interop service
 
 _This status will be updated after each major step._
 
