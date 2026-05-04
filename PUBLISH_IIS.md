@@ -19,15 +19,17 @@ This script performs all required deployment steps:
 - Restarts IIS site `neurithm.net`
 - Runs file checks for:
   - `index.html`
-  - `_framework\icudt_EFIGS.tptq2av103.dat`
   - `js\microphone.js`
 - Runs HTTP health checks for:
   - `/`
-  - `/_framework/icudt_EFIGS.tptq2av103.dat`
   - `/js/microphone.js`
 - Writes deployment logs to:
   - `./logs/iis-deploy.log`
   - `D:\web\NeuRithm.net\deployment-status.log`
+
+## Runtime Stability Note
+- `InvariantGlobalization` is enabled for `Neurithm.Web` to avoid runtime dependency on ICU `.dat` downloads.
+- This prevents startup failures caused by missing `icudt_*.dat` files.
 
 ## IIS Site Setup
 1. Open IIS Manager.
@@ -52,15 +54,14 @@ This script performs all required deployment steps:
 - Browsers typically require HTTPS for microphone access.
 
 ## Troubleshooting
-- If app hangs at loading 100%, verify ICU file loads:
-  - `http://neurithm.net/_framework/icudt_EFIGS.tptq2av103.dat`
-- If this URL is not `200`, re-run:
+- Re-run deterministic deploy script:
   ```powershell
   powershell -ExecutionPolicy Bypass -File .\scripts\Publish-IIS.ps1
   ```
 - Check logs:
   - `./logs/iis-deploy.log`
   - `D:\web\NeuRithm.net\deployment-status.log`
+- If browser still uses stale JS fingerprints, hard refresh with `Ctrl+F5`.
 
 ---
 

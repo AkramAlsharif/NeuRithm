@@ -20,6 +20,7 @@ GitHub Copilot is an AI-powered code completion tool that helps you write code f
 - [x] Browser microphone permission request implemented on Home page via JS interop service
 - [x] Deterministic IIS publish script added with deployment logs and health checks
 - [x] Publish script corrected to deploy the active solution project path reliably
+- [x] WebAssembly startup hardened using InvariantGlobalization to remove ICU .dat dependency
 
 _This status will be updated after each major step._
 
@@ -37,9 +38,9 @@ _This status will be updated after each major step._
 - The script ensures:
   - fresh publish output from `Neurithm.Web/Neurithm.Web.csproj`
   - static assets copied to IIS root
-  - correct web.config with MIME mappings
+  - correct web.config with MIME mappings and no-store cache headers
   - IIS site restart
-  - health checks for `/`, ICU `.dat`, and microphone script
+  - health checks for `/` and `/js/microphone.js`
   - local deployment logs
 
 ---

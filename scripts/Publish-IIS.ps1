@@ -68,7 +68,11 @@ $webConfig = @'
     <httpProtocol>
       <customHeaders>
         <remove name="Cache-Control" />
-        <add name="Cache-Control" value="no-cache" />
+        <remove name="Pragma" />
+        <remove name="Expires" />
+        <add name="Cache-Control" value="no-store, no-cache, must-revalidate, max-age=0" />
+        <add name="Pragma" value="no-cache" />
+        <add name="Expires" value="0" />
       </customHeaders>
     </httpProtocol>
   </system.webServer>
@@ -104,7 +108,6 @@ foreach ($fileCheck in $fileChecks) {
 $baseUrl = "http://neurithm.net"
 $checks = @(
     "/",
-    "/_framework/icudt_EFIGS.tptq2av103.dat",
     "/js/microphone.js"
 )
 
