@@ -1,0 +1,52 @@
+@namespace Neurithm.Web.Components
+@using Neurithm.Web.Models
+
+<div class="falling-notes-board">
+    @if (Notes.Count == 0)
+    {
+        <p class="text-muted">No upcoming notes.</p>
+    }
+    else
+    {
+        @foreach (var note in Notes)
+        {
+            <div class="falling-note">
+                <span class="note-name">@note.NoteName</span>
+                <span class="note-beat">Beat @note.Beat</span>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<PlayableNote> Notes { get; set; } = [];
+}
+
+<style>
+    .falling-notes-board {
+        min-height: 180px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        background: #fafafa;
+    }
+
+    .falling-note {
+        display: flex;
+        justify-content: space-between;
+        background: #ffffff;
+        border: 1px solid #e8e8e8;
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+    }
+
+    .note-name {
+        font-weight: 600;
+    }
+
+    .note-beat {
+        color: #666;
+    }
+</style>

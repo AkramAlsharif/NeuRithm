@@ -1,0 +1,25 @@
+@namespace Neurithm.Web.Components
+
+<div class="score-panel">
+    <div><strong>Score:</strong> @Score</div>
+    <div><strong>Combo:</strong> @Combo</div>
+    <div><strong>Accuracy:</strong> @AccuracyPercentage.ToString("0.0")%</div>
+</div>
+
+@code {
+    [Parameter] public int Score { get; set; }
+    [Parameter] public int Combo { get; set; }
+    [Parameter] public double AccuracyPercentage { get; set; }
+}
+
+<style>
+    .score-panel {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+    }
+</style>

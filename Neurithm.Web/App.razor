@@ -1,0 +1,38 @@
+﻿@inject NavigationManager NavigationManager
+
+<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        @if (ShouldRedirectLegacyRoute)
+        {
+            <p>Redirecting...</p>
+        }
+        else
+        {
+            <LayoutView Layout="@typeof(MainLayout)">
+                <Pages.NotFound />
+            </LayoutView>
+        }
+    </NotFound>
+</Router>
+
+@code {
+    private bool ShouldRedirectLegacyRoute
+    {
+        get
+        {
+            var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            if (string.Equals(path, "counter", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(path, "weather", StringComparison.OrdinalIgnoreCase))
+            {
+                NavigationManager.NavigateTo("/", true);
+                return true;
+            }
+
+            return false;
+        }
+    }
+}

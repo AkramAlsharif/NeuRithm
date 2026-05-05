@@ -14,10 +14,27 @@ else
     <p><strong>Selected level:</strong> @selectedLevelId</p>
 }
 
-<p>Game screen with falling notes and piano keyboard will appear here in the next steps.</p>
+<Neurithm.Web.Components.ScorePanel Score="score" Combo="combo" AccuracyPercentage="accuracy" />
+<Neurithm.Web.Components.FallingNotes Notes="notes" />
+<Neurithm.Web.Components.HitLine />
+
+<div class="d-flex gap-2 mt-2">
+    <button class="btn btn-primary" @onclick="StartLevelAsync">Start</button>
+    <button class="btn btn-outline-secondary" @onclick="ResetLevelAsync">Reset</button>
+</div>
 
 @code {
     private string? selectedLevelId;
+    private int score;
+    private int combo;
+    private double accuracy;
+
+    private IReadOnlyList<Neurithm.Web.Models.PlayableNote> notes =
+    [
+        new("E4", 0, 1),
+        new("E4", 1, 1),
+        new("F4", 2, 1)
+    ];
 
     protected override async Task OnInitializedAsync()
     {
@@ -27,6 +44,22 @@ else
         await ClientLogService.WriteAsync("Game", string.IsNullOrWhiteSpace(selectedLevelId)
             ? "Game opened without selected level"
             : $"Game opened with level: {selectedLevelId}");
+    }
+
+    private async Task StartLevelAsync()
+    {
+        score = 0;
+        combo = 0;
+        accuracy = 100;
+        await ClientLogService.WriteAsync("Game", "Start level clicked");
+    }
+
+    private async Task ResetLevelAsync()
+    {
+        score = 0;
+        combo = 0;
+        accuracy = 0;
+        await ClientLogService.WriteAsync("Game", "Reset level clicked");
     }
 
     private static string? GetQueryValue(string query, string key)
