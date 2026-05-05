@@ -1,0 +1,56 @@
+@page "/game"
+@inject NavigationManager NavigationManager
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
+
+<PageTitle>Game</PageTitle>
+
+<h1>Game</h1>
+@if (string.IsNullOrWhiteSpace(selectedLevelId))
+{
+    <p>No level selected yet. Use Level Selector to choose a level.</p>
+}
+else
+{
+    <p><strong>Selected level:</strong> @selectedLevelId</p>
+}
+
+<p>Game screen with falling notes and piano keyboard will appear here in the next steps.</p>
+
+@code {
+    private string? selectedLevelId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        selectedLevelId = GetQueryValue(uri.Query, "levelId");
+
+        await ClientLogService.WriteAsync("Game", string.IsNullOrWhiteSpace(selectedLevelId)
+            ? "Game opened without selected level"
+            : $"Game opened with level: {selectedLevelId}");
+    }
+
+    private static string? GetQueryValue(string query, string key)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        var trimmed = query.TrimStart('?');
+        var pairs = trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var pair in pairs)
+        {
+            var parts = pair.Split('=', 2);
+            var currentKey = Uri.UnescapeDataString(parts[0]);
+            if (!string.Equals(currentKey, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : string.Empty;
+        }
+
+        return null;
+    }
+}

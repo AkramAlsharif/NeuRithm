@@ -22,6 +22,8 @@ GitHub Copilot is an AI-powered code completion tool that helps you write code f
 - [x] Publish script corrected to deploy the active solution project path reliably
 - [x] WebAssembly startup hardened using InvariantGlobalization to remove ICU .dat dependency
 - [x] Dynamic page navigation and local client runtime logs implemented for action diagnostics
+- [x] Dynamic level catalog service and Level Selector integration implemented
+- [x] IIS deployment script enhanced to append latest IIS error log tail after each deployment
 
 _This status will be updated after each major step._
 
@@ -43,6 +45,7 @@ _This status will be updated after each major step._
   - IIS site restart
   - health checks for `/` and `/js/microphone.js`
   - local deployment logs
+  - latest IIS log inspection for recent 404/500 entries
 
 ---
 

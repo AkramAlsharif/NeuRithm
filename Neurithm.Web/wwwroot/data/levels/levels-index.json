@@ -1,0 +1,20 @@
+[
+  {
+    "id": "beethoven_ode_to_joy_easy",
+    "title": "Ode to Joy - Easy",
+    "composer": "Beethoven",
+    "difficulty": "Beginner",
+    "bpm": 90,
+    "noteCount": 3,
+    "previewText": "A short beginner-friendly classical melody."
+  },
+  {
+    "id": "mozart_twinkle_easy",
+    "title": "Twinkle Twinkle - Easy",
+    "composer": "Mozart",
+    "difficulty": "Beginner",
+    "bpm": 80,
+    "noteCount": 3,
+    "previewText": "A short beginner-friendly classical melody."
+  }
+]

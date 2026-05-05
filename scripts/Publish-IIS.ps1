@@ -125,3 +125,21 @@ foreach ($path in $checks) {
 }
 
 Write-Log "IIS publish finished successfully"
+
+$w3svcFolder = "C:\inetpub\logs\LogFiles\W3SVC3"
+if (Test-Path $w3svcFolder) {
+    $latestLog = Get-ChildItem $w3svcFolder -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($null -ne $latestLog) {
+        Write-Log "Latest IIS log file: $($latestLog.FullName)"
+        $recentErrors = Get-Content $latestLog.FullName -Tail 200 | Where-Object { $_ -match ' 404 ' -or $_ -match ' 500 ' }
+        if ($recentErrors) {
+            Write-Log "Recent IIS 404/500 entries (tail):"
+            foreach ($entry in $recentErrors) {
+                Write-Log $entry
+            }
+        }
+        else {
+            Write-Log "No recent IIS 404/500 entries found in latest log tail"
+        }
+    }
+}

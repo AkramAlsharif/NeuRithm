@@ -1,0 +1,71 @@
+@page "/level-selector"
+@inject Neurithm.Web.Services.ILevelCatalogService LevelCatalogService
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Level Selector</PageTitle>
+
+<h1>Choose a Level</h1>
+<p>Select a level to play.</p>
+
+@if (isLoading)
+{
+    <p><em>Loading levels...</em></p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else if (levels.Count == 0)
+{
+    <p>No levels found.</p>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var level in levels)
+        {
+            <div class="border rounded p-3">
+                <h3>@level.Title</h3>
+                <p><strong>Composer:</strong> @level.Composer</p>
+                <p><strong>Difficulty:</strong> @level.Difficulty</p>
+                <p><strong>BPM:</strong> @level.Bpm</p>
+                <p><strong>Notes:</strong> @level.NoteCount</p>
+                <p>@level.PreviewText</p>
+                <button class="btn btn-primary" @onclick="() => SelectLevelAsync(level.Id)">Play This Level</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<Neurithm.Web.Models.LevelSummary> levels = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ClientLogService.WriteAsync("LevelSelector", "Level selector opened");
+
+        try
+        {
+            levels = await LevelCatalogService.GetLevelsAsync();
+            await ClientLogService.WriteAsync("LevelSelector", $"Loaded {levels.Count} levels");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load levels.";
+            await ClientLogService.WriteAsync("LevelSelector", $"Failed loading levels: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SelectLevelAsync(string levelId)
+    {
+        await ClientLogService.WriteAsync("LevelSelector", $"Selected level: {levelId}");
+        NavigationManager.NavigateTo($"/game?levelId={Uri.EscapeDataString(levelId)}");
+    }
+}
