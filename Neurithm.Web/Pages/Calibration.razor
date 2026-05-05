@@ -1,0 +1,46 @@
+@page "/calibration"
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
+
+<PageTitle>Calibration</PageTitle>
+
+<h1>Calibration</h1>
+<p>Calibrate your microphone and audio settings for best accuracy.</p>
+<!-- Calibration controls placeholder -->
+<ul>
+    <li>Microphone sensitivity: <input type="range" /></li>
+    <li>Noise gate: <input type="range" /></li>
+    <li>Confidence threshold: <input type="range" /></li>
+    <li>Latency offset: <input type="number" /></li>
+    <li>A4 tuning: <input type="number" value="440" /></li>
+</ul>
+
+<h2>Local Runtime Logs</h2>
+<button class="btn btn-sm btn-outline-primary mb-2" @onclick="RefreshLogsAsync">Refresh Logs</button>
+@if (logs.Count == 0)
+{
+    <p>No logs yet.</p>
+}
+else
+{
+    <ul>
+        @foreach (var log in logs)
+        {
+            <li>@log</li>
+        }
+    </ul>
+}
+
+@code {
+    private IReadOnlyList<string> logs = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ClientLogService.WriteAsync("Calibration", "Calibration page opened");
+        await RefreshLogsAsync();
+    }
+
+    private async Task RefreshLogsAsync()
+    {
+        logs = await ClientLogService.ReadRecentAsync(30);
+    }
+}

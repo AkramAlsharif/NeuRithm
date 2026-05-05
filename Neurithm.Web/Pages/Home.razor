@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using Neurithm.Audio
 @inject IMicrophoneService MicrophoneService
+@inject NavigationManager NavigationManager
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
 
 <PageTitle>Neurithm</PageTitle>
 
@@ -8,10 +10,10 @@
 <p class="lead">Train piano rhythm with your real instrument.</p>
 
 <div class="hero-buttons d-flex gap-2 flex-wrap">
-    <button class="btn btn-primary">Start Playing</button>
+    <button class="btn btn-primary" @onclick="GoToGame">Start Playing</button>
     <button class="btn btn-secondary" @onclick="RequestMicrophoneAccessAsync">Calibrate Microphone</button>
-    <button class="btn btn-info">Choose Level</button>
-    <button class="btn btn-outline-dark">Profile</button>
+    <button class="btn btn-info" @onclick="GoToLevelSelector">Choose Level</button>
+    <button class="btn btn-outline-dark" @onclick="GoToProfile">Profile</button>
 </div>
 
 <section class="mt-3">
@@ -70,5 +72,29 @@
     {
         var granted = await MicrophoneService.RequestPermissionAsync();
         microphonePermissionStatus = granted ? "Granted" : "Denied";
+        await ClientLogService.WriteAsync("Home", $"Microphone permission status changed to: {microphonePermissionStatus}");
+
+        if (granted)
+        {
+            NavigationManager.NavigateTo("/calibration");
+        }
+    }
+
+    private async Task GoToGame()
+    {
+        await ClientLogService.WriteAsync("Home", "Navigating to Game page");
+        NavigationManager.NavigateTo("/game");
+    }
+
+    private async Task GoToLevelSelector()
+    {
+        await ClientLogService.WriteAsync("Home", "Navigating to Level Selector page");
+        NavigationManager.NavigateTo("/level-selector");
+    }
+
+    private async Task GoToProfile()
+    {
+        await ClientLogService.WriteAsync("Home", "Navigating to Profile page");
+        NavigationManager.NavigateTo("/profile");
     }
 }
