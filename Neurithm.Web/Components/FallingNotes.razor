@@ -1,5 +1,5 @@
 @namespace Neurithm.Web.Components
-@using Neurithm.Web.Models
+@using Neurithm.Application.Services
 
 <div class="falling-notes-board">
     @if (Notes.Count == 0)
@@ -8,11 +8,14 @@
     }
     else
     {
-        @foreach (var note in Notes)
+        @foreach (var note in Notes.Where(n => !n.IsResolved || n.TopPercent < 105))
         {
-            <div class="falling-note">
-                <span class="note-name">@note.NoteName</span>
-                <span class="note-beat">Beat @note.Beat</span>
+            var laneLeft = LaneToLeftPercent(note.LaneIndex);
+            var laneWidth = LaneWidthPercent();
+            <div class="falling-note @(note.IsInsideHitWindow ? "in-window" : null) @(note.IsMissed ? "missed" : null) @(note.IsResolved && !note.IsMissed ? "resolved" : null)"
+                 style="top:@($"{note.TopPercent:0.##}%");left:@($"{laneLeft:0.###}%");width:@($"{laneWidth:0.###}%");height:@($"{note.HeightPercent:0.##}%")"
+                 title="@note.Feedback">
+                @note.NoteName
             </div>
         }
     }
@@ -20,33 +23,58 @@
 
 @code {
     [Parameter]
-    public IReadOnlyList<PlayableNote> Notes { get; set; } = [];
+    public IReadOnlyList<FallingNoteVisual> Notes { get; set; } = [];
+
+    private const int LaneCount = 61;
+
+    private static double LaneToLeftPercent(int laneIndex)
+    {
+        var clamped = Math.Clamp(laneIndex, 0, LaneCount - 1);
+        return (clamped * 100.0) / LaneCount;
+    }
+
+    private static double LaneWidthPercent() => 100.0 / LaneCount;
 }
 
 <style>
     .falling-notes-board {
-        min-height: 180px;
+        position: relative;
+        width: 100%;
+        min-height: 420px;
         border: 1px solid #ddd;
         border-radius: 8px;
-        padding: 12px;
         background: #fafafa;
+        overflow: hidden;
     }
 
     .falling-note {
+        position: absolute;
+        border-radius: 4px;
+        border: 1px solid #4f46e5;
+        background: #6366f1;
+        color: #fff;
         display: flex;
-        justify-content: space-between;
-        background: #ffffff;
-        border: 1px solid #e8e8e8;
-        border-radius: 6px;
-        padding: 8px 10px;
-        margin-bottom: 8px;
-    }
-
-    .note-name {
+        align-items: center;
+        justify-content: center;
+        font-size: 0.55rem;
         font-weight: 600;
+        transition: top 0.05s linear;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .note-beat {
-        color: #666;
+    .falling-note.in-window {
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+    }
+
+    .falling-note.resolved {
+        border-color: #16a34a;
+        background: #22c55e;
+    }
+
+    .falling-note.missed {
+        border-color: #b91c1c;
+        background: #ef4444;
     }
 </style>

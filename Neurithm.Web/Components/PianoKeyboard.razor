@@ -3,7 +3,7 @@
 <div class="piano-keyboard">
     @foreach (var key in Keys)
     {
-        <div class="piano-key @(IsActive(key) ? "active" : null)">@key</div>
+        <div class="piano-key @(IsBlackKey(key) ? "black-key" : "white-key") @(IsDetected(key) ? "detected" : null) @(IsTarget(key) ? "target" : null)">@key</div>
     }
 </div>
 
@@ -14,35 +14,65 @@
     [Parameter]
     public string? ActiveNote { get; set; }
 
-    private bool IsActive(string key)
+    [Parameter]
+    public string? TargetNote { get; set; }
+
+    private static bool IsBlackKey(string key)
+        => key.Contains('#', StringComparison.Ordinal);
+
+    private bool IsDetected(string key)
         => !string.IsNullOrWhiteSpace(ActiveNote) && string.Equals(key, ActiveNote, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsTarget(string key)
+        => !string.IsNullOrWhiteSpace(TargetNote) && string.Equals(key, TargetNote, StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
     .piano-keyboard {
+        width: 100%;
         display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
+        gap: 2px;
+        flex-wrap: nowrap;
         margin-top: 8px;
         margin-bottom: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
     }
 
     .piano-key {
-        width: 52px;
-        height: 72px;
-        border: 1px solid #cfcfcf;
-        border-radius: 4px;
-        background: #fff;
+        flex: 1 1 0;
+        min-width: 26px;
+        height: 112px;
+        border-radius: 0 0 4px 4px;
         display: flex;
         align-items: flex-end;
         justify-content: center;
         padding-bottom: 6px;
-        font-size: 0.8rem;
+        font-size: 0.62rem;
+        border: 1px solid #b8b8b8;
+        user-select: none;
     }
 
-    .piano-key.active {
-        background: #d6eeff;
-        border-color: #2196f3;
-        box-shadow: 0 0 10px rgba(33,150,243,.35);
+    .white-key {
+        background: #ffffff;
+        color: #222;
+    }
+
+    .black-key {
+        background: #1f2937;
+        color: #f9fafb;
+        border-color: #111827;
+        height: 78px;
+        margin-left: -6px;
+        margin-right: -6px;
+        z-index: 2;
+    }
+
+    .piano-key.detected {
+        box-shadow: inset 0 0 0 2px #2196f3, 0 0 10px rgba(33,150,243,.65);
+    }
+
+    .piano-key.target {
+        box-shadow: inset 0 0 0 2px #f97316;
     }
 </style>
