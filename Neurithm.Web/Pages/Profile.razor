@@ -1,0 +1,102 @@
+@page "/profile"
+@inject Neurithm.Web.Services.IAvatarCatalogService AvatarCatalogService
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
+
+<PageTitle>Profile</PageTitle>
+
+<h1>Profile</h1>
+<p>Manage your player profile and select your avatar.</p>
+
+<div class="mb-3">
+    <label class="form-label">Display name</label>
+    <input class="form-control" @bind="displayName" />
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Preferred difficulty</label>
+    <select class="form-select" @bind="preferredDifficulty">
+        <option>Beginner</option>
+        <option>Intermediate</option>
+        <option>Advanced</option>
+    </select>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Loading avatars...</em></p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else
+{
+    <h2>Choose Avatar</h2>
+    <div class="d-flex flex-column gap-2">
+        @foreach (var avatar in avatars)
+        {
+            <button class="btn text-start @(selectedAvatarId == avatar.Id ? "btn-success" : "btn-outline-secondary")"
+                    @onclick="() => SelectAvatarAsync(avatar.Id)">
+                <strong>@avatar.Name</strong> (@avatar.Gender) - @avatar.Description
+            </button>
+        }
+    </div>
+}
+
+<div class="mt-4">
+    <h2>Profile Snapshot</h2>
+    <ul>
+        <li>Display name: @displayName</li>
+        <li>Selected avatar: @selectedAvatarId</li>
+        <li>Preferred difficulty: @preferredDifficulty</li>
+        <li>A4 tuning value: 440</li>
+        <li>Microphone sensitivity preset: Normal</li>
+        <li>Latency offset: 0</li>
+        <li>Last played level: --</li>
+        <li>Total score: --</li>
+        <li>Best combo: --</li>
+        <li>Average accuracy: --</li>
+        <li>Total completed levels: --</li>
+    </ul>
+</div>
+
+@code {
+    private string displayName = "Player";
+    private string preferredDifficulty = "Beginner";
+    private string selectedAvatarId = "female_aria";
+
+    private IReadOnlyList<Neurithm.Web.Models.AvatarSummary> avatars = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ClientLogService.WriteAsync("Profile", "Profile page opened");
+
+        try
+        {
+            avatars = await AvatarCatalogService.GetAvatarsAsync();
+            await ClientLogService.WriteAsync("Profile", $"Loaded {avatars.Count} avatars");
+
+            if (avatars.Count > 0 && !avatars.Any(x => x.Id == selectedAvatarId))
+            {
+                selectedAvatarId = avatars[0].Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load avatars.";
+            await ClientLogService.WriteAsync("Profile", $"Failed loading avatars: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SelectAvatarAsync(string avatarId)
+    {
+        selectedAvatarId = avatarId;
+        await ClientLogService.WriteAsync("Profile", $"Selected avatar: {avatarId}");
+    }
+}

@@ -12,5 +12,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IMicrophoneService, WebMicrophoneService>();
 builder.Services.AddScoped<IClientLogService, ClientLogService>();
 builder.Services.AddScoped<ILevelCatalogService, LevelCatalogService>();
+builder.Services.AddScoped<IAvatarCatalogService, AvatarCatalogService>();
 
 await builder.Build().RunAsync();

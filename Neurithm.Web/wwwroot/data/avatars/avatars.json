@@ -1,0 +1,56 @@
+[
+  {
+    "id": "female_aria",
+    "name": "Aria",
+    "gender": "Female",
+    "description": "Calm classical pianist",
+    "imagePath": "/assets/avatars/female_aria.png",
+    "isUnlocked": true,
+    "themeColor": "#A3C1DA"
+  },
+  {
+    "id": "female_mika",
+    "name": "Mika",
+    "gender": "Female",
+    "description": "Energetic rhythm learner",
+    "imagePath": "/assets/avatars/female_mika.png",
+    "isUnlocked": true,
+    "themeColor": "#F7B2B7"
+  },
+  {
+    "id": "female_luna",
+    "name": "Luna",
+    "gender": "Female",
+    "description": "Focused night-practice musician",
+    "imagePath": "/assets/avatars/female_luna.png",
+    "isUnlocked": true,
+    "themeColor": "#C9B6E4"
+  },
+  {
+    "id": "male_ren",
+    "name": "Ren",
+    "gender": "Male",
+    "description": "Disciplined concert student",
+    "imagePath": "/assets/avatars/male_ren.png",
+    "isUnlocked": true,
+    "themeColor": "#A7D7C5"
+  },
+  {
+    "id": "male_kai",
+    "name": "Kai",
+    "gender": "Male",
+    "description": "Fast reflex rhythm player",
+    "imagePath": "/assets/avatars/male_kai.png",
+    "isUnlocked": true,
+    "themeColor": "#F9D162"
+  },
+  {
+    "id": "male_noah",
+    "name": "Noah",
+    "gender": "Male",
+    "description": "Relaxed beginner-friendly mentor",
+    "imagePath": "/assets/avatars/male_noah.png",
+    "isUnlocked": true,
+    "themeColor": "#B0C4B1"
+  }
+]
