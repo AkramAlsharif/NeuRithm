@@ -1,0 +1,48 @@
+@namespace Neurithm.Web.Components
+
+<div class="piano-keyboard">
+    @foreach (var key in Keys)
+    {
+        <div class="piano-key @(IsActive(key) ? "active" : null)">@key</div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<string> Keys { get; set; } = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+
+    [Parameter]
+    public string? ActiveNote { get; set; }
+
+    private bool IsActive(string key)
+        => !string.IsNullOrWhiteSpace(ActiveNote) && string.Equals(key, ActiveNote, StringComparison.OrdinalIgnoreCase);
+}
+
+<style>
+    .piano-keyboard {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    .piano-key {
+        width: 52px;
+        height: 72px;
+        border: 1px solid #cfcfcf;
+        border-radius: 4px;
+        background: #fff;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 6px;
+        font-size: 0.8rem;
+    }
+
+    .piano-key.active {
+        background: #d6eeff;
+        border-color: #2196f3;
+        box-shadow: 0 0 10px rgba(33,150,243,.35);
+    }
+</style>

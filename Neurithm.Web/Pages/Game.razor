@@ -17,9 +17,11 @@ else
 <Neurithm.Web.Components.ScorePanel Score="score" Combo="combo" AccuracyPercentage="accuracy" />
 <Neurithm.Web.Components.FallingNotes Notes="notes" />
 <Neurithm.Web.Components.HitLine />
+<Neurithm.Web.Components.PianoKeyboard ActiveNote="activeNote" />
 
 <div class="d-flex gap-2 mt-2">
     <button class="btn btn-primary" @onclick="StartLevelAsync">Start</button>
+    <button class="btn btn-success" @onclick="MarkNextNoteAsync">Mark Next Note</button>
     <button class="btn btn-outline-secondary" @onclick="ResetLevelAsync">Reset</button>
 </div>
 
@@ -28,6 +30,8 @@ else
     private int score;
     private int combo;
     private double accuracy;
+    private string? activeNote;
+    private int noteIndex;
 
     private IReadOnlyList<Neurithm.Web.Models.PlayableNote> notes =
     [
@@ -51,7 +55,26 @@ else
         score = 0;
         combo = 0;
         accuracy = 100;
+        noteIndex = 0;
+        activeNote = notes.Count > 0 ? notes[0].NoteName : null;
         await ClientLogService.WriteAsync("Game", "Start level clicked");
+    }
+
+    private async Task MarkNextNoteAsync()
+    {
+        if (notes.Count == 0)
+        {
+            return;
+        }
+
+        score += 3;
+        combo += 1;
+        accuracy = Math.Min(100, 90 + combo);
+
+        noteIndex = (noteIndex + 1) % notes.Count;
+        activeNote = notes[noteIndex].NoteName;
+
+        await ClientLogService.WriteAsync("Game", $"Advanced to note {activeNote}; score={score}; combo={combo}");
     }
 
     private async Task ResetLevelAsync()
@@ -59,6 +82,8 @@ else
         score = 0;
         combo = 0;
         accuracy = 0;
+        noteIndex = 0;
+        activeNote = null;
         await ClientLogService.WriteAsync("Game", "Reset level clicked");
     }
 
