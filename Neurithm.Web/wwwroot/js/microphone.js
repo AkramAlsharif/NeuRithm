@@ -1,4 +1,10 @@
 window.neurithmMicrophone = {
+    stream: null,
+    audioContext: null,
+    analyser: null,
+    source: null,
+    timer: null,
+
     requestPermission: async function () {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             window.neurithmClientLogs?.write("Microphone", "Browser does not support mediaDevices.getUserMedia");
@@ -15,6 +21,64 @@ window.neurithmMicrophone = {
             window.neurithmClientLogs?.write("Microphone", `Microphone permission denied: ${message}`);
             return false;
         }
+    },
+
+    startCapture: async function (dotNetRef) {
+        try {
+            if (this.timer) {
+                this.stopCapture();
+            }
+
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 2048;
+            this.source = this.audioContext.createMediaStreamSource(this.stream);
+            this.source.connect(this.analyser);
+
+            const buffer = new Float32Array(this.analyser.fftSize);
+            const sampleRate = this.audioContext.sampleRate;
+
+            this.timer = window.setInterval(() => {
+                this.analyser.getFloatTimeDomainData(buffer);
+                dotNetRef.invokeMethodAsync("OnAudioFrame", {
+                    samples: Array.from(buffer),
+                    sampleRate: sampleRate
+                });
+            }, 60);
+
+            window.neurithmClientLogs?.write("Microphone", "Audio capture started");
+            return true;
+        } catch (error) {
+            const message = error && error.message ? error.message : "Unknown start capture error";
+            window.neurithmClientLogs?.write("Microphone", `Failed to start capture: ${message}`);
+            return false;
+        }
+    },
+
+    stopCapture: function () {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+
+        if (this.source) {
+            try { this.source.disconnect(); } catch { }
+            this.source = null;
+        }
+
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+
+        if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+        }
+
+        this.analyser = null;
+        window.neurithmClientLogs?.write("Microphone", "Audio capture stopped");
     }
 };
 

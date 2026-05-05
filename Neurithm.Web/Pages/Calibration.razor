@@ -1,11 +1,11 @@
 @page "/calibration"
+@inject Neurithm.Audio.IMicrophoneService MicrophoneService
 @inject Neurithm.Web.Services.IClientLogService ClientLogService
 
 <PageTitle>Calibration</PageTitle>
 
 <h1>Calibration</h1>
 <p>Calibrate your microphone and audio settings for best accuracy.</p>
-<!-- Calibration controls placeholder -->
 <ul>
     <li>Microphone sensitivity: <input type="range" /></li>
     <li>Noise gate: <input type="range" /></li>
@@ -13,6 +13,17 @@
     <li>Latency offset: <input type="number" /></li>
     <li>A4 tuning: <input type="number" value="440" /></li>
 </ul>
+
+<div class="d-flex gap-2 mb-3">
+    <button class="btn btn-primary" @onclick="StartMicAsync" disabled="@isCapturing">Start Microphone</button>
+    <button class="btn btn-outline-secondary" @onclick="StopMicAsync" disabled="@(!isCapturing)">Stop Microphone</button>
+</div>
+
+<p><strong>Capture status:</strong> @(isCapturing ? "Running" : "Stopped")</p>
+<p><strong>Detected note:</strong> @detectedNote</p>
+<p><strong>Sample rate:</strong> @sampleRate Hz</p>
+
+<Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="detectedNote" />
 
 <h2>Local Runtime Logs</h2>
 <button class="btn btn-sm btn-outline-primary mb-2" @onclick="RefreshLogsAsync">Refresh Logs</button>
@@ -32,6 +43,11 @@ else
 
 @code {
     private IReadOnlyList<string> logs = Array.Empty<string>();
+    private bool isCapturing;
+    private string detectedNote = "--";
+    private int sampleRate;
+
+    private static readonly IReadOnlyList<string> extendedKeys = BuildKeys("C2", "C7");
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,8 +55,116 @@ else
         await RefreshLogsAsync();
     }
 
+    private async Task StartMicAsync()
+    {
+        var granted = await MicrophoneService.RequestPermissionAsync();
+        if (!granted)
+        {
+            await ClientLogService.WriteAsync("Calibration", "Microphone permission denied while starting calibration capture");
+            await RefreshLogsAsync();
+            return;
+        }
+
+        await MicrophoneService.StartCaptureAsync(async (samples, rate) =>
+        {
+            sampleRate = rate;
+            var note = DetectDominantNote(samples, rate);
+            if (!string.IsNullOrWhiteSpace(note))
+            {
+                detectedNote = note;
+            }
+
+            await InvokeAsync(StateHasChanged);
+        });
+
+        isCapturing = MicrophoneService.IsCapturing;
+        await ClientLogService.WriteAsync("Calibration", "Microphone capture started from calibration page");
+        await RefreshLogsAsync();
+    }
+
+    private async Task StopMicAsync()
+    {
+        await MicrophoneService.StopCaptureAsync();
+        isCapturing = MicrophoneService.IsCapturing;
+        await ClientLogService.WriteAsync("Calibration", "Microphone capture stopped from calibration page");
+        await RefreshLogsAsync();
+    }
+
     private async Task RefreshLogsAsync()
     {
-        logs = await ClientLogService.ReadRecentAsync(30);
+        logs = await ClientLogService.ReadRecentAsync(40);
+    }
+
+    private static string? DetectDominantNote(float[] samples, int sampleRate)
+    {
+        if (samples.Length == 0 || sampleRate <= 0)
+        {
+            return null;
+        }
+
+        var crossings = 0;
+        for (var i = 1; i < samples.Length; i++)
+        {
+            if ((samples[i - 1] <= 0 && samples[i] > 0) || (samples[i - 1] >= 0 && samples[i] < 0))
+            {
+                crossings++;
+            }
+        }
+
+        if (crossings < 2)
+        {
+            return null;
+        }
+
+        var frequency = (crossings * sampleRate) / (2.0 * samples.Length);
+        if (frequency < 65.0 || frequency > 2100.0)
+        {
+            return null;
+        }
+
+        return FrequencyToNoteName(frequency);
+    }
+
+    private static string FrequencyToNoteName(double frequency)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        var noteNumber = 12 * Math.Log2(frequency / 440.0) + 69;
+        var rounded = (int)Math.Round(noteNumber);
+        var octave = (rounded / 12) - 1;
+        var name = noteNames[(rounded % 12 + 12) % 12];
+        return $"{name}{octave}";
+    }
+
+    private static IReadOnlyList<string> BuildKeys(string startNote, string endNote)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        var result = new List<string>();
+
+        var start = NoteToMidi(startNote);
+        var end = NoteToMidi(endNote);
+
+        for (var midi = start; midi <= end; midi++)
+        {
+            var octave = (midi / 12) - 1;
+            var name = noteNames[(midi % 12 + 12) % 12];
+            result.Add($"{name}{octave}");
+        }
+
+        return result;
+    }
+
+    private static int NoteToMidi(string note)
+    {
+        var noteNames = new Dictionary<string, int>
+        {
+            ["C"] = 0, ["C#"] = 1, ["D"] = 2, ["D#"] = 3,
+            ["E"] = 4, ["F"] = 5, ["F#"] = 6, ["G"] = 7,
+            ["G#"] = 8, ["A"] = 9, ["A#"] = 10, ["B"] = 11
+        };
+
+        var pitch = note.Length == 3 ? note[..2] : note[..1];
+        var octavePart = note[pitch.Length..];
+        var octave = int.Parse(octavePart);
+        return (octave + 1) * 12 + noteNames[pitch];
     }
 }

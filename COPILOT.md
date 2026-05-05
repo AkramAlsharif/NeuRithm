@@ -27,6 +27,8 @@ GitHub Copilot is an AI-powered code completion tool that helps you write code f
 - [x] Dynamic avatar catalog service and Profile page avatar selection implemented
 - [x] Legacy template route 404 mitigation and gameplay component foundation added
 - [x] Router NotFound configuration conflict fixed and dynamic PianoKeyboard component added
+- [x] Real-time microphone capture pipeline wired from browser to C# with detected-note highlight
+- [x] Multi-octave keyboard rendering (C2-C7) enabled in Calibration and Game pages
 
 _This status will be updated after each major step._
 
