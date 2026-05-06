@@ -82,8 +82,8 @@ window.neurithmMicrophone = {
                 try {
                     this.analyser.getFloatTimeDomainData(buffer);
                     dotNetRef.invokeMethodAsync("OnAudioFrame", {
-                        Samples: Array.from(buffer),
-                        SampleRate: sampleRate
+                        samples: Array.from(buffer),
+                        sampleRate: sampleRate
                     }).catch(err => {
                         const message = err && err.message ? err.message : String(err);
                         window.neurithmClientLogs?.write("Microphone", `OnAudioFrame invoke failed: ${message}`);

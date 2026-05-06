@@ -1061,3 +1061,24 @@ Anything outside that chain is secondary.
 - After starting microphone on `/calibration`, frame counters should increment continuously.
 - Frequency/RMS/confidence should update when real piano notes are played.
 - On-screen key highlighting should now reflect detected note candidates and reliable notes.
+
+## 37. Progress Update (Mic Frequency Not Updating + Better Piano Note Identification)
+
+### Root cause fixed
+
+- Calibration frequency staying at `0.00 Hz` was caused by JS microphone frame payload naming mismatch after prior edits.
+- `OnAudioFrame` now receives correctly mapped frame data again.
+
+### Completed in this step
+
+- Fixed JS frame payload in `wwwroot/js/microphone.js` to send `samples` and `sampleRate` matching DTO JSON mapping.
+- Improved pitch detection quality for real piano in `SimplePitchDetector`:
+  - added signal conditioning (`DC offset removal + Hann window`) before autocorrelation
+  - added fundamental-selection logic to reduce harmonic/octave misidentification
+  - confidence now uses corrected-lag correlation score
+
+### Expected gameplay impact
+
+- Calibration frequency and confidence should move while playing real piano notes.
+- Game note recognition should be more stable and closer to the real key being played.
+- On-screen key lighting should align better with live piano input.
