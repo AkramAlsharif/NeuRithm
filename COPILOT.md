@@ -1042,3 +1042,22 @@ Anything outside that chain is secondary.
 
 - On calibration start, frequency/RMS/confidence should now move while real piano notes are played.
 - On-screen key highlight should appear as soon as note candidates are observed, then stabilize as reliable detections are reached.
+
+## 36. Progress Update (Calibration Listening Fix: JS->.NET Frame Binding)
+
+### Root cause found
+
+- Calibration values stayed at zero because microphone frame payload binding was not robust across interop serializer naming behavior.
+- Result: `MicrophoneFrameDto` could receive empty/default data, so detector always returned unreliable zero values.
+
+### Completed in this step
+
+- Fixed JS microphone frame payload mapping in `wwwroot/js/microphone.js` to emit DTO-aligned names during interop calls.
+- Hardened DTO binding in `Models/MicrophoneFrameDto.cs` with explicit JSON property mapping for `samples` and `sampleRate`.
+- Added dynamic frame diagnostics in `Calibration.razor` (`Frames received`, `Last sample rate`, `Last frame UTC`) to verify live capture flow instantly.
+
+### Expected user-visible behavior
+
+- After starting microphone on `/calibration`, frame counters should increment continuously.
+- Frequency/RMS/confidence should update when real piano notes are played.
+- On-screen key highlighting should now reflect detected note candidates and reliable notes.

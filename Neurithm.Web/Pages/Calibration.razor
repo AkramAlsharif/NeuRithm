@@ -48,6 +48,9 @@
     <p><strong>Cents offset:</strong> @centsOffset.ToString("+0.0;-0.0;0.0")</p>
     <p><strong>Volume RMS:</strong> @volumeRms.ToString("0.0000")</p>
     <p><strong>Reliability:</strong> @(isReliable ? "Reliable" : "Unreliable")</p>
+    <p><strong>Frames received:</strong> @frameCount</p>
+    <p><strong>Last sample rate:</strong> @lastSampleRate</p>
+    <p><strong>Last frame UTC:</strong> @(lastFrameAtUtc?.ToString("O") ?? "none")</p>
 </div>
 
 <Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="activeNote" />
@@ -73,6 +76,10 @@
 
     private static readonly IReadOnlyList<string> extendedKeys = BuildKeys("C2", "C7");
 
+    private long frameCount;
+    private int lastSampleRate;
+    private DateTime? lastFrameAtUtc;
+
     protected override Task OnInitializedAsync()
     {
         var options = PitchDetector.GetOptions();
@@ -97,7 +104,17 @@
             return;
         }
 
-        await MicrophoneService.StartCaptureAsync((_, _) => Task.CompletedTask);
+        frameCount = 0;
+        lastSampleRate = 0;
+        lastFrameAtUtc = null;
+
+        await MicrophoneService.StartCaptureAsync((samples, sampleRate) =>
+        {
+            frameCount++;
+            lastSampleRate = sampleRate;
+            lastFrameAtUtc = DateTime.UtcNow;
+            return Task.CompletedTask;
+        });
 
         isCapturing = MicrophoneService.IsCapturing;
         if (!isCapturing)
