@@ -9,6 +9,23 @@
 <h1>Calibration</h1>
 <p>Start microphone and verify note detection using your real piano.</p>
 
+<div class="row g-2 mb-3">
+    <div class="col-md-6">
+        <label class="form-label">Microphone input</label>
+        <select class="form-select"
+                value="@selectedInputDeviceId"
+                @onchange="OnSelectedInputDeviceChangedAsync"
+                disabled="@isCapturing">
+            <option value="">Default microphone</option>
+            @foreach (var mic in inputDevices)
+            {
+                <option value="@mic.DeviceId">@mic.Label</option>
+            }
+        </select>
+        <small class="text-muted">Selection is saved and reused next time.</small>
+    </div>
+</div>
+
 <div class="d-flex gap-2 mb-3">
     <button class="btn btn-primary" @onclick="StartMicAsync" disabled="@isCapturing">Start Microphone</button>
     <button class="btn btn-outline-secondary" @onclick="StopMicAsync" disabled="@(!isCapturing)">Stop Microphone</button>
@@ -80,7 +97,10 @@
     private int lastSampleRate;
     private DateTime? lastFrameAtUtc;
 
-    protected override Task OnInitializedAsync()
+    private IReadOnlyList<Neurithm.Audio.MicrophoneInputDevice> inputDevices = [];
+    private string? selectedInputDeviceId;
+
+    protected override async Task OnInitializedAsync()
     {
         var options = PitchDetector.GetOptions();
         a4Frequency = options.A4FrequencyHz;
@@ -89,7 +109,22 @@
         debounceMs = options.DebounceMilliseconds;
 
         MicrophoneService.DetectionAvailable += OnDetectionAvailableAsync;
-        return Task.CompletedTask;
+
+        inputDevices = await MicrophoneService.GetInputDevicesAsync();
+        selectedInputDeviceId = MicrophoneService.SelectedInputDeviceId;
+        if (!string.IsNullOrWhiteSpace(selectedInputDeviceId) && inputDevices.All(d => d.DeviceId != selectedInputDeviceId))
+        {
+            selectedInputDeviceId = null;
+            await MicrophoneService.SetInputDeviceAsync(null);
+        }
+    }
+
+    private async Task OnSelectedInputDeviceChangedAsync(ChangeEventArgs e)
+    {
+        var selectedValue = e.Value?.ToString();
+        selectedInputDeviceId = string.IsNullOrWhiteSpace(selectedValue) ? null : selectedValue;
+        await MicrophoneService.SetInputDeviceAsync(selectedInputDeviceId);
+        await ClientLogService.WriteAsync("Calibration", $"Microphone selected: {(string.IsNullOrWhiteSpace(selectedInputDeviceId) ? "default" : selectedInputDeviceId)}");
     }
 
     private async Task StartMicAsync()

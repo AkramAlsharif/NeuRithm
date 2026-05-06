@@ -6,22 +6,61 @@ namespace Neurithm.Web.Services;
 
 public sealed class WebMicrophoneService : IMicrophoneService, IAsyncDisposable
 {
+    private const string SelectedMicStorageKey = "neurithm_selected_microphone";
+
     private readonly IJSRuntime _jsRuntime;
+    private readonly IPitchDetector _pitchDetector;
+
     private DotNetObjectReference<WebMicrophoneService>? _dotNetRef;
     private Func<float[], int, Task>? _onAudioFrame;
 
-    public WebMicrophoneService(IJSRuntime jsRuntime)
+    public WebMicrophoneService(IJSRuntime jsRuntime, IPitchDetector pitchDetector)
     {
         _jsRuntime = jsRuntime;
+        _pitchDetector = pitchDetector;
     }
 
     public bool IsCapturing { get; private set; }
 
-    public event Func<string, Task>? NoteDetected;
+    public MicrophonePermissionStatus PermissionStatus { get; private set; } = MicrophonePermissionStatus.NotRequested;
 
-    public async Task<bool> RequestPermissionAsync()
+    public string? LastError { get; private set; }
+
+    public string? SelectedInputDeviceId { get; private set; }
+
+    public event Func<DetectedNoteResult, Task>? DetectionAvailable;
+
+    public async Task<MicrophonePermissionResult> RequestPermissionAsync()
     {
-        return await _jsRuntime.InvokeAsync<bool>("neurithmMicrophone.requestPermission");
+        var response = await _jsRuntime.InvokeAsync<MicrophonePermissionJsResponse>("neurithmMicrophone.requestPermission");
+        PermissionStatus = MapPermissionStatus(response.Status);
+        LastError = response.ErrorMessage;
+        return new MicrophonePermissionResult(PermissionStatus, LastError);
+    }
+
+    public async Task<IReadOnlyList<MicrophoneInputDevice>> GetInputDevicesAsync()
+    {
+        try
+        {
+            SelectedInputDeviceId ??= await _jsRuntime.InvokeAsync<string?>("neurithmMicrophone.getSavedInputDevice", SelectedMicStorageKey);
+            var devices = await _jsRuntime.InvokeAsync<MicrophoneInputDeviceJsResponse[]>("neurithmMicrophone.getInputDevices");
+
+            return devices.Select(d => new MicrophoneInputDevice(
+                d.DeviceId,
+                string.IsNullOrWhiteSpace(d.Label) ? "Microphone" : d.Label,
+                d.IsDefault)).ToArray();
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            return Array.Empty<MicrophoneInputDevice>();
+        }
+    }
+
+    public async Task SetInputDeviceAsync(string? deviceId)
+    {
+        SelectedInputDeviceId = string.IsNullOrWhiteSpace(deviceId) ? null : deviceId;
+        await _jsRuntime.InvokeVoidAsync("neurithmMicrophone.saveInputDevice", SelectedMicStorageKey, SelectedInputDeviceId);
     }
 
     public async Task StartCaptureAsync(Func<float[], int, Task> onAudioFrame)
@@ -33,9 +72,22 @@ public sealed class WebMicrophoneService : IMicrophoneService, IAsyncDisposable
 
         _onAudioFrame = onAudioFrame;
         _dotNetRef ??= DotNetObjectReference.Create(this);
+        SelectedInputDeviceId ??= await _jsRuntime.InvokeAsync<string?>("neurithmMicrophone.getSavedInputDevice", SelectedMicStorageKey);
 
-        var started = await _jsRuntime.InvokeAsync<bool>("neurithmMicrophone.startCapture", _dotNetRef);
-        IsCapturing = started;
+        var startResponse = await _jsRuntime.InvokeAsync<CaptureStartJsResponse>("neurithmMicrophone.startCapture", _dotNetRef, SelectedInputDeviceId);
+        IsCapturing = startResponse.Started;
+
+        if (IsCapturing)
+        {
+            PermissionStatus = MicrophonePermissionStatus.Granted;
+            LastError = null;
+            return;
+        }
+
+        PermissionStatus = startResponse.Blocked ? MicrophonePermissionStatus.Blocked : MicrophonePermissionStatus.Error;
+        LastError = string.IsNullOrWhiteSpace(startResponse.ErrorMessage)
+            ? "Failed to start microphone capture."
+            : startResponse.ErrorMessage;
     }
 
     public async Task StopCaptureAsync()
@@ -52,58 +104,21 @@ public sealed class WebMicrophoneService : IMicrophoneService, IAsyncDisposable
     [JSInvokable]
     public async Task OnAudioFrame(MicrophoneFrameDto frame)
     {
-        if (_onAudioFrame is null)
+        if (frame.Samples.Length == 0 || frame.SampleRate <= 0)
         {
             return;
         }
 
-        await _onAudioFrame(frame.Samples, frame.SampleRate);
-
-        var note = DetectDominantNote(frame.Samples, frame.SampleRate);
-        if (!string.IsNullOrWhiteSpace(note) && NoteDetected is not null)
+        if (_onAudioFrame is not null)
         {
-            await NoteDetected.Invoke(note);
-        }
-    }
-
-    private static string? DetectDominantNote(float[] samples, int sampleRate)
-    {
-        if (samples.Length == 0 || sampleRate <= 0)
-        {
-            return null;
+            await _onAudioFrame(frame.Samples, frame.SampleRate);
         }
 
-        var crossings = 0;
-        for (var i = 1; i < samples.Length; i++)
+        var detection = _pitchDetector.AnalyzeFrame(frame.Samples, frame.SampleRate);
+        if (DetectionAvailable is not null)
         {
-            if ((samples[i - 1] <= 0 && samples[i] > 0) || (samples[i - 1] >= 0 && samples[i] < 0))
-            {
-                crossings++;
-            }
+            await DetectionAvailable.Invoke(detection);
         }
-
-        if (crossings < 2)
-        {
-            return null;
-        }
-
-        var estimatedFrequency = (crossings * sampleRate) / (2.0 * samples.Length);
-        if (estimatedFrequency < 65.0 || estimatedFrequency > 2100.0)
-        {
-            return null;
-        }
-
-        return FrequencyToNoteName(estimatedFrequency);
-    }
-
-    private static string FrequencyToNoteName(double frequency)
-    {
-        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-        var noteNumber = 12 * Math.Log2(frequency / 440.0) + 69;
-        var rounded = (int)Math.Round(noteNumber);
-        var octave = (rounded / 12) - 1;
-        var name = noteNames[(rounded % 12 + 12) % 12];
-        return $"{name}{octave}";
     }
 
     public async ValueTask DisposeAsync()
@@ -121,5 +136,35 @@ public sealed class WebMicrophoneService : IMicrophoneService, IAsyncDisposable
         }
 
         _dotNetRef?.Dispose();
+    }
+
+    private static MicrophonePermissionStatus MapPermissionStatus(string? status)
+        => status?.ToLowerInvariant() switch
+        {
+            "granted" => MicrophonePermissionStatus.Granted,
+            "denied" => MicrophonePermissionStatus.Denied,
+            "blocked" => MicrophonePermissionStatus.Blocked,
+            "error" => MicrophonePermissionStatus.Error,
+            _ => MicrophonePermissionStatus.NotRequested
+        };
+
+    private sealed class MicrophonePermissionJsResponse
+    {
+        public string Status { get; set; } = "notrequested";
+        public string? ErrorMessage { get; set; }
+    }
+
+    private sealed class CaptureStartJsResponse
+    {
+        public bool Started { get; set; }
+        public bool Blocked { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    private sealed class MicrophoneInputDeviceJsResponse
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+        public bool IsDefault { get; set; }
     }
 }

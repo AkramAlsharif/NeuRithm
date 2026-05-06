@@ -38,7 +38,56 @@ window.neurithmMicrophone = {
         }
     },
 
-    startCapture: async function (dotNetRef) {
+    getInputDevices: async function () {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            return [];
+        }
+
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const audioInputs = devices.filter(d => d.kind === "audioinput");
+            return audioInputs.map((d, index) => ({
+                deviceId: d.deviceId || "",
+                label: d.label || `Microphone ${index + 1}`,
+                isDefault: d.deviceId === "default"
+            }));
+        } catch (error) {
+            const message = error && error.message ? error.message : "Unknown enumerateDevices error";
+            window.neurithmClientLogs?.write("Microphone", `Failed to enumerate input devices: ${message}`);
+            return [];
+        }
+    },
+
+    saveInputDevice: function (storageKey, deviceId) {
+        try {
+            if (!storageKey) {
+                return;
+            }
+
+            if (!deviceId) {
+                localStorage.removeItem(storageKey);
+                return;
+            }
+
+            localStorage.setItem(storageKey, deviceId);
+        } catch {
+            // ignore storage errors
+        }
+    },
+
+    getSavedInputDevice: function (storageKey) {
+        try {
+            if (!storageKey) {
+                return null;
+            }
+
+            return localStorage.getItem(storageKey);
+        } catch {
+            return null;
+        }
+    },
+
+    startCapture: async function (dotNetRef, selectedDeviceId) {
         if (!window.isSecureContext) {
             const message = "Microphone capture blocked: secure context required. Use HTTPS on neurithm.net and trust the local certificate.";
             window.neurithmClientLogs?.write("Microphone", message);
@@ -50,13 +99,17 @@ window.neurithmMicrophone = {
                 this.stopCapture();
             }
 
-            this.stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false
-                }
-            });
+            const audioConstraints = {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            };
+
+            if (selectedDeviceId) {
+                audioConstraints.deviceId = { exact: selectedDeviceId };
+            }
+
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
             if (this.audioContext.state === "suspended") {
@@ -94,7 +147,7 @@ window.neurithmMicrophone = {
                 }
             }, 25);
 
-            window.neurithmClientLogs?.write("Microphone", `Audio capture started (sampleRate=${sampleRate})`);
+            window.neurithmClientLogs?.write("Microphone", `Audio capture started (sampleRate=${sampleRate}, device=${selectedDeviceId || "default"})`);
             return { started: true, blocked: false, errorMessage: null };
         } catch (error) {
             const message = error && error.message ? error.message : "Unknown start capture error";

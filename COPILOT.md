@@ -1082,3 +1082,30 @@ Anything outside that chain is secondary.
 - Calibration frequency and confidence should move while playing real piano notes.
 - Game note recognition should be more stable and closer to the real key being played.
 - On-screen key lighting should align better with live piano input.
+
+## 38. Progress Update (Calibration Microphone Selector + Saved Selection)
+
+### Completed in this step
+
+- Added a microphone input list box to `Calibration.razor`.
+- Implemented dynamic microphone device enumeration through `IMicrophoneService`.
+- Added persisted microphone selection support (saved in browser storage and restored on load).
+- Updated capture startup so selected input device is used when starting microphone capture.
+
+### Technical changes
+
+- `Neurithm.Audio/IMicrophoneService.cs`
+  - added `MicrophoneInputDevice` record
+  - added `GetInputDevicesAsync()`
+  - added `SetInputDeviceAsync(string? deviceId)`
+  - added `SelectedInputDeviceId` property
+- `Neurithm.Web/Services/WebMicrophoneService.cs`
+  - implemented input device enumeration and persisted selected device retrieval/storage
+  - passed selected device into JS capture startup
+- `Neurithm.Web/wwwroot/js/microphone.js`
+  - added `getInputDevices`, `saveInputDevice`, `getSavedInputDevice`
+  - updated `startCapture` to accept and apply selected `deviceId`
+- `Neurithm.Web/Pages/Calibration.razor`
+  - rendered microphone list box
+  - loads available devices dynamically
+  - saves selected device and reuses it for capture
