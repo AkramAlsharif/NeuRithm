@@ -1052,7 +1052,7 @@ Anything outside that chain is secondary.
 
 ### Completed in this step
 
-- Fixed JS microphone frame payload mapping in `wwwroot/js/microphone.js` to emit DTO-aligned names during interop calls.
+- Fixed JS microphone frame payload in `wwwroot/js/microphone.js` to emit DTO-aligned names during interop calls.
 - Hardened DTO binding in `Models/MicrophoneFrameDto.cs` with explicit JSON property mapping for `samples` and `sampleRate`.
 - Added dynamic frame diagnostics in `Calibration.razor` (`Frames received`, `Last sample rate`, `Last frame UTC`) to verify live capture flow instantly.
 
@@ -1171,3 +1171,24 @@ Anything outside that chain is secondary.
 - Far fewer rapid note flips.
 - More stable note lock for real piano keys.
 - Better resilience to short bursts of noise/wind on mic.
+
+## 41. Progress Update (Mic-Detected Piano Key Lighting)
+
+### Completed in this step
+
+- Updated shared piano keyboard component so real microphone detections visibly light up the matching piano key.
+- Added dedicated `mic-detected` visual state with stronger white/black key styling and transition for fast refresh visibility.
+- Updated calibration note handling so active key highlight clears when no valid current note exists, preventing stale key glow.
+
+### Files updated
+
+- `Neurithm.Web/Components/PianoKeyboard.razor`
+  - unified dynamic mic-detection class application (`mic-detected`)
+  - stronger key-on visual feedback for both white and black keys
+- `Neurithm.Web/Pages/Calibration.razor`
+  - active note reset behavior improved for non-detected frames
+
+### Expected result
+
+- When mic detects a note, the corresponding `<div class="piano-key white-key ...">` or black key lights up immediately.
+- Key highlight follows live note state and clears correctly when detection drops.
