@@ -177,9 +177,17 @@
         updated.MinRmsForDetection = Math.Clamp(noiseGate, 0.001, 0.200);
         updated.MinConfidence = Math.Clamp(confidenceThreshold, 0.10, 0.99);
         updated.DebounceMilliseconds = Math.Clamp(debounceMs, 50, 500);
+        updated.LowPassCutoffHz = 2400.0;
+        updated.PianoRangeMarginSemitones = 0.35;
+        updated.MaxCentsFromNearestNote = 40.0;
+        updated.MinCorrelationPeak = 0.22;
+        updated.SmoothingWindowMilliseconds = 220;
+        updated.FrameIntervalMilliseconds = 25;
+        updated.MinSamplesForAveraging = 4;
+        updated.DominantNoteVoteThreshold = 0.60;
         PitchDetector.UpdateOptions(updated);
 
-        return ClientLogService.WriteAsync("Calibration", $"Detector options updated: A4={updated.A4FrequencyHz}, RMS={updated.MinRmsForDetection}, Confidence={updated.MinConfidence}, Debounce={updated.DebounceMilliseconds}");
+        return ClientLogService.WriteAsync("Calibration", $"Detector options updated: A4={updated.A4FrequencyHz}, RMS={updated.MinRmsForDetection}, Confidence={updated.MinConfidence}, Debounce={updated.DebounceMilliseconds}, LPF={updated.LowPassCutoffHz}, MaxCents={updated.MaxCentsFromNearestNote}, SmoothMs={updated.SmoothingWindowMilliseconds}");
     }
 
     private Task OnDetectionAvailableAsync(Neurithm.Audio.DetectedNoteResult detection)

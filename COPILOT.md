@@ -1110,8 +1110,6 @@ Anything outside that chain is secondary.
   - loads available devices dynamically
   - saves selected device and reuses it for capture
 
-````````
-
 ## 39. Progress Update (Shared-First Pitch Filtering: Low-Pass + Piano-Range Gate)
 
 ### Completed in this step
@@ -1137,3 +1135,39 @@ Anything outside that chain is secondary.
 
 - Better rejection of non-piano noise and unstable harmonic content.
 - More accurate key recognition from real piano input with fewer false positives.
+
+## 40. Progress Update (Shared-First Averaging + Bounded Materializer for Stable Note Detection)
+
+### Problem addressed
+
+- Real piano input could fluctuate too fast (many note changes per second) under noise/turbulence (e.g., blowing air).
+- Needed stable averaging and bounded output instead of per-frame note flipping.
+
+### Completed in this step
+
+- Implemented shared/runtime stabilization helpers in `SimplePitchDetector`:
+  - temporal sample buffer for recent detections
+  - dominant-note vote in smoothing window
+  - averaged frequency/confidence/cents materialization for bounded output
+- Added stricter bounded gates:
+  - minimum autocorrelation peak threshold
+  - existing low-pass + piano-range + between-key cent bounds retained
+- Kept feature layer skinny: calibration/game continue orchestrating detector calls without embedding detection math.
+
+### Dynamic runtime options added
+
+- `MinCorrelationPeak`
+- `SmoothingWindowMilliseconds`
+- `FrameIntervalMilliseconds`
+- `MinSamplesForAveraging`
+- `DominantNoteVoteThreshold`
+
+### Calibration integration
+
+- `Calibration.razor` now applies the new options through `PitchDetector.UpdateOptions(...)` to keep tuning centralized and dynamic.
+
+### Expected result
+
+- Far fewer rapid note flips.
+- More stable note lock for real piano keys.
+- Better resilience to short bursts of noise/wind on mic.

@@ -12,6 +12,11 @@ public sealed class PitchDetectorOptions
     public double LowPassCutoffHz { get; set; } = 2400.0;
     public double PianoRangeMarginSemitones { get; set; } = 0.35;
     public double MaxCentsFromNearestNote { get; set; } = 45.0;
+    public double MinCorrelationPeak { get; set; } = 0.22;
+    public int SmoothingWindowMilliseconds { get; set; } = 220;
+    public int FrameIntervalMilliseconds { get; set; } = 25;
+    public int MinSamplesForAveraging { get; set; } = 4;
+    public double DominantNoteVoteThreshold { get; set; } = 0.6;
 }
 
 public interface IPitchDetector
