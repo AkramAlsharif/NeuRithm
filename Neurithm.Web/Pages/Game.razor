@@ -1,95 +1,318 @@
 @page "/game"
+@implements IAsyncDisposable
 @inject NavigationManager NavigationManager
 @inject Neurithm.Web.Services.IClientLogService ClientLogService
+@inject Neurithm.Web.Services.ILevelCatalogService LevelCatalogService
+@inject Neurithm.Audio.IMicrophoneService MicrophoneService
+@inject Neurithm.Application.Services.IGameSessionService GameSessionService
+@inject Neurithm.Web.Services.IGameHistoryService GameHistoryService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Game</PageTitle>
 
-<h1>Game</h1>
-@if (string.IsNullOrWhiteSpace(selectedLevelId))
-{
-    <p>No level selected yet. Use Level Selector to choose a level.</p>
-}
-else
-{
-    <p><strong>Selected level:</strong> @selectedLevelId</p>
-}
+<div class="game-page-shell">
+    <h1>Game</h1>
 
-<Neurithm.Web.Components.ScorePanel Score="score" Combo="combo" AccuracyPercentage="accuracy" />
-<Neurithm.Web.Components.FallingNotes Notes="notes" />
-<Neurithm.Web.Components.HitLine />
-<Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="activeNote" />
+    <div class="top-controls d-flex gap-2 mb-2 flex-wrap">
+        <button class="btn btn-primary" @onclick="StartMicrophoneAsync" disabled="@isCapturing">Start Microphone</button>
+        <button class="btn btn-outline-secondary" @onclick="StopMicrophoneAsync" disabled="@(!isCapturing)">Stop Microphone</button>
+        <button class="btn btn-success" @onclick="StartLevelAsync" disabled="@(!levelLoaded)">Play</button>
+        <button class="btn btn-warning" @onclick="PauseLevelAsync" disabled="@(!snapshot.IsRunning)">Pause</button>
+        <button class="btn btn-info" @onclick="ResumeLevelAsync" disabled="@(!snapshot.IsPaused)">Resume</button>
+    </div>
 
-<div class="d-flex gap-2 mt-2">
-    <button class="btn btn-primary" @onclick="StartLevelAsync">Start</button>
-    <button class="btn btn-success" @onclick="MarkNextNoteAsync">Mark Next Note</button>
-    <button class="btn btn-outline-secondary" @onclick="ResetLevelAsync">Reset</button>
+    <div class="level-pick mb-2">
+        <label class="form-label text-light">Level</label>
+        <select class="form-select" value="@selectedLevelId" @onchange="OnLevelChangedAsync">
+            @foreach (var level in availableLevels)
+            {
+                <option value="@level.Id">@level.Title (@level.Difficulty, @level.Bpm BPM)</option>
+            }
+        </select>
+    </div>
+
+    <Neurithm.Web.Components.MicrophoneStatusPanel
+        PermissionStatus="@permissionStatus"
+        LastError="@lastError"
+        IsCapturing="@isCapturing" />
+
+    <Neurithm.Web.Components.ScorePanel
+        Score="snapshot.Score"
+        Combo="snapshot.Combo"
+        AccuracyPercentage="snapshot.Accuracy"
+        Misses="snapshot.Misses"
+        DetectedNote="snapshot.CurrentDetectedNote"
+        TargetNote="snapshot.CurrentTargetNote"
+        TimingFeedback="snapshot.TimingFeedback"
+        TempoMultiplier="snapshot.TempoMultiplier"
+        PerfectCount="snapshot.PerfectCount"
+        GoodCount="snapshot.GoodCount"
+        AcceptableCount="snapshot.AcceptableCount"
+        TotalResolved="snapshot.TotalResolved" />
+
+    <Neurithm.Web.Components.CountdownOverlay
+        IsVisible="@snapshot.IsCountdown"
+        CountdownValue="@snapshot.CountdownValue" />
+
+    <div id="three-game-visuals" class="three-visuals-host"></div>
+
+    <Neurithm.Web.Components.FallingNotes Notes="snapshot.FallingNotes" />
+    <Neurithm.Web.Components.HitLine />
+    <Neurithm.Web.Components.TimingFeedback Feedback="snapshot.TimingFeedback" />
+    <Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="snapshot.CurrentDetectedNote" TargetNote="snapshot.CurrentTargetNote" />
+
+    @if (snapshot.IsCompleted)
+    {
+        <div class="alert alert-success mt-3">
+            <h4>Result Summary</h4>
+            <p><strong>Score:</strong> @snapshot.Score</p>
+            <p><strong>Accuracy:</strong> @snapshot.Accuracy.ToString("0.0")%</p>
+            <p><strong>Misses:</strong> @snapshot.Misses</p>
+            <p><strong>Perfect/Good/Acceptable:</strong> @snapshot.PerfectCount / @snapshot.GoodCount / @snapshot.AcceptableCount</p>
+            <p><strong>Resolved Notes:</strong> @snapshot.TotalResolved</p>
+        </div>
+    }
 </div>
 
 @code {
     private string? selectedLevelId;
-    private int score;
-    private int combo;
-    private double accuracy;
-    private string? activeNote;
-    private int noteIndex;
+
+    private bool isCapturing;
+    private bool levelLoaded;
+    private bool threeStarted;
+
+    private string permissionStatus = "Not requested";
+    private string? lastError;
+
+    private bool resultSaved;
+
+    private IReadOnlyList<Neurithm.Web.Models.LevelSummary> availableLevels = [];
+
+    private Neurithm.Application.Services.GameSessionSnapshot snapshot = new(
+        IsLoaded: false,
+        IsRunning: false,
+        IsPaused: false,
+        IsCountdown: false,
+        IsCompleted: false,
+        LevelId: "--",
+        LevelTitle: "--",
+        CountdownValue: 0,
+        Score: 0,
+        Combo: 0,
+        MaxCombo: 0,
+        Misses: 0,
+        PerfectCount: 0,
+        GoodCount: 0,
+        AcceptableCount: 0,
+        TotalResolved: 0,
+        Accuracy: 0,
+        TempoMultiplier: 1.0,
+        CurrentDetectedNote: "--",
+        CurrentTargetNote: "--",
+        TimingFeedback: "--",
+        ElapsedSongMilliseconds: 0,
+        FallingNotes: []);
+
+    private PeriodicTimer? gameLoopTimer;
+    private DateTime loopStartUtc;
 
     private static readonly IReadOnlyList<string> extendedKeys = BuildKeys("C2", "C7");
 
-    private IReadOnlyList<Neurithm.Web.Models.PlayableNote> notes =
-    [
-        new("E4", 0, 1),
-        new("E4", 1, 1),
-        new("F4", 2, 1),
-        new("G4", 3, 1),
-        new("A4", 4, 1)
-    ];
-
     protected override async Task OnInitializedAsync()
     {
+        MicrophoneService.DetectionAvailable += OnDetectionAvailableAsync;
+
+        availableLevels = await LevelCatalogService.GetLevelsAsync();
+
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
         selectedLevelId = GetQueryValue(uri.Query, "levelId");
 
-        await ClientLogService.WriteAsync("Game", string.IsNullOrWhiteSpace(selectedLevelId)
-            ? "Game opened without selected level"
-            : $"Game opened with level: {selectedLevelId}");
+        if (string.IsNullOrWhiteSpace(selectedLevelId))
+        {
+            selectedLevelId = availableLevels.FirstOrDefault()?.Id ?? "neurithm_first_steps_c_major";
+        }
+
+        await LoadLevelAsync(selectedLevelId);
+        await ClientLogService.WriteAsync("Game", $"Game initialized with level '{selectedLevelId}'");
     }
 
-    private async Task StartLevelAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        score = 0;
-        combo = 0;
-        accuracy = 100;
-        noteIndex = 0;
-        activeNote = notes.Count > 0 ? notes[0].NoteName : null;
-        await ClientLogService.WriteAsync("Game", "Start level clicked");
+        if (firstRender && !threeStarted)
+        {
+            await JSRuntime.InvokeVoidAsync("neurithmThreeVisuals.start", "three-game-visuals");
+            threeStarted = true;
+        }
     }
 
-    private async Task MarkNextNoteAsync()
+    private async Task OnLevelChangedAsync(ChangeEventArgs args)
     {
-        if (notes.Count == 0)
+        var value = args.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(value))
         {
             return;
         }
 
-        score += 3;
-        combo += 1;
-        accuracy = Math.Min(100, 90 + combo);
-
-        noteIndex = (noteIndex + 1) % notes.Count;
-        activeNote = notes[noteIndex].NoteName;
-
-        await ClientLogService.WriteAsync("Game", $"Advanced to note {activeNote}; score={score}; combo={combo}");
+        selectedLevelId = value;
+        await LoadLevelAsync(value);
+        await ClientLogService.WriteAsync("Game", $"Level changed to {value}");
     }
 
-    private async Task ResetLevelAsync()
+    private async Task LoadLevelAsync(string levelId)
     {
-        score = 0;
-        combo = 0;
-        accuracy = 0;
-        noteIndex = 0;
-        activeNote = null;
-        await ClientLogService.WriteAsync("Game", "Reset level clicked");
+        var definition = await LevelCatalogService.GetLevelDefinitionAsync(levelId);
+        if (definition is null)
+        {
+            levelLoaded = false;
+            await ClientLogService.WriteAsync("Game", $"Failed to load level definition: {levelId}");
+            return;
+        }
+
+        var level = new Neurithm.Core.Models.Level(
+            Id: definition.Id,
+            Title: definition.Title,
+            Composer: definition.Composer,
+            Difficulty: definition.Difficulty,
+            Bpm: definition.Bpm,
+            TimeSignature: definition.TimeSignature,
+            NormalTempoMultiplier: definition.NormalTempoMultiplier,
+            PreviewText: definition.PreviewText,
+            Notes: definition.Notes.Select(n => new Neurithm.Core.Models.LevelNote(n.Note, n.Beat, n.DurationBeats)).ToList());
+
+        GameSessionService.LoadLevel(level);
+        snapshot = GameSessionService.GetSnapshot();
+        levelLoaded = snapshot.IsLoaded;
     }
+
+    private async Task StartMicrophoneAsync()
+    {
+        var permission = await MicrophoneService.RequestPermissionAsync();
+        permissionStatus = ToDisplay(permission.Status);
+        lastError = permission.ErrorMessage;
+
+        if (permission.Status != Neurithm.Audio.MicrophonePermissionStatus.Granted)
+        {
+            await ClientLogService.WriteAsync("Game", $"Microphone blocked: {permissionStatus}, error={lastError ?? "n/a"}");
+            return;
+        }
+
+        await MicrophoneService.StartCaptureAsync((_, _) => Task.CompletedTask);
+        isCapturing = MicrophoneService.IsCapturing;
+
+        if (!isCapturing)
+        {
+            permissionStatus = ToDisplay(MicrophoneService.PermissionStatus);
+            lastError = MicrophoneService.LastError;
+            await ClientLogService.WriteAsync("Game", $"Microphone failed to start: {lastError ?? "unknown"}");
+            return;
+        }
+
+        await ClientLogService.WriteAsync("Game", "Microphone capture started");
+    }
+
+    private async Task StopMicrophoneAsync()
+    {
+        await MicrophoneService.StopCaptureAsync();
+        isCapturing = MicrophoneService.IsCapturing;
+        await ClientLogService.WriteAsync("Game", "Microphone capture stopped");
+    }
+
+    private async Task StartLevelAsync()
+    {
+        if (!levelLoaded)
+        {
+            return;
+        }
+
+        GameSessionService.StartCountdown(3);
+        snapshot = GameSessionService.GetSnapshot();
+        resultSaved = false;
+
+        loopStartUtc = DateTime.UtcNow;
+        gameLoopTimer?.Dispose();
+        gameLoopTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+
+        _ = RunGameLoopAsync(gameLoopTimer);
+        await ClientLogService.WriteAsync("Game", "Level countdown started");
+    }
+
+    private Task PauseLevelAsync()
+    {
+        GameSessionService.Pause();
+        snapshot = GameSessionService.GetSnapshot();
+        return ClientLogService.WriteAsync("Game", "Level paused");
+    }
+
+    private Task ResumeLevelAsync()
+    {
+        GameSessionService.Resume();
+        snapshot = GameSessionService.GetSnapshot();
+        return ClientLogService.WriteAsync("Game", "Level resumed");
+    }
+
+    private async Task RunGameLoopAsync(PeriodicTimer timer)
+    {
+        try
+        {
+            while (await timer.WaitForNextTickAsync())
+            {
+                var elapsed = DateTime.UtcNow - loopStartUtc;
+                GameSessionService.Update(elapsed);
+                snapshot = GameSessionService.GetSnapshot();
+
+                await InvokeAsync(StateHasChanged);
+
+                if (snapshot.IsCompleted)
+                {
+                    if (!resultSaved)
+                    {
+                        var attempt = new Neurithm.Web.Models.GameAttemptRecord(
+                            AttemptId: Guid.NewGuid().ToString("N"),
+                            CreatedAtUtc: DateTime.UtcNow,
+                            LevelId: snapshot.LevelId,
+                            LevelTitle: snapshot.LevelTitle,
+                            Score: snapshot.Score,
+                            AccuracyPercentage: snapshot.Accuracy,
+                            MissCount: snapshot.Misses,
+                            PerfectCount: snapshot.PerfectCount,
+                            GoodCount: snapshot.GoodCount,
+                            AcceptableCount: snapshot.AcceptableCount,
+                            MaxCombo: snapshot.MaxCombo,
+                            FinalTempoMultiplier: snapshot.TempoMultiplier,
+                            DurationSeconds: snapshot.ElapsedSongMilliseconds / 1000.0);
+
+                        await GameHistoryService.SaveAttemptAsync(attempt);
+                        resultSaved = true;
+                    }
+
+                    await ClientLogService.WriteAsync("Game", $"Level completed. Score={snapshot.Score}, Accuracy={snapshot.Accuracy:0.0}%");
+                    break;
+                }
+            }
+        }
+        catch
+        {
+            // ignore disposal race
+        }
+    }
+
+    private Task OnDetectionAvailableAsync(Neurithm.Audio.DetectedNoteResult detection)
+    {
+        GameSessionService.RegisterDetection(detection);
+        snapshot = GameSessionService.GetSnapshot();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private static string ToDisplay(Neurithm.Audio.MicrophonePermissionStatus status)
+        => status switch
+        {
+            Neurithm.Audio.MicrophonePermissionStatus.NotRequested => "Not requested",
+            Neurithm.Audio.MicrophonePermissionStatus.Granted => "Granted",
+            Neurithm.Audio.MicrophonePermissionStatus.Denied => "Denied",
+            Neurithm.Audio.MicrophonePermissionStatus.Blocked => "Browser/HTTPS blocked",
+            Neurithm.Audio.MicrophonePermissionStatus.Error => "Error",
+            _ => "Unknown"
+        };
 
     private static string? GetQueryValue(string query, string key)
     {
@@ -143,9 +366,51 @@ else
             ["G#"] = 8, ["A"] = 9, ["A#"] = 10, ["B"] = 11
         };
 
-        var pitch = note.Length == 3 ? note[..2] : note[..1];
+        var pitch = note.Length >= 3 && note[1] == '#'
+            ? note[..2]
+            : note[..1];
+
         var octavePart = note[pitch.Length..];
         var octave = int.Parse(octavePart);
         return (octave + 1) * 12 + noteNames[pitch];
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        MicrophoneService.DetectionAvailable -= OnDetectionAvailableAsync;
+
+        gameLoopTimer?.Dispose();
+
+        if (isCapturing)
+        {
+            await MicrophoneService.StopCaptureAsync();
+        }
+
+        if (threeStarted)
+        {
+            await JSRuntime.InvokeVoidAsync("neurithmThreeVisuals.stop");
+        }
+    }
 }
+
+<style>
+    .game-page-shell {
+        background: #020104;
+        color: #f8f3ff;
+        min-height: 100vh;
+        padding: 12px;
+    }
+
+    .three-visuals-host {
+        width: 100%;
+        height: 280px;
+        border: 1px solid rgba(168,85,247,0.45);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 0 24px rgba(168,85,247,0.25);
+    }
+
+    .level-pick {
+        max-width: 420px;
+    }
+</style>

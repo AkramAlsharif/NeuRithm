@@ -1,0 +1,30 @@
+{
+  "id": "neurithm_rhythm_focus_01",
+  "title": "Rhythm Focus 01",
+  "composer": "Neurithm",
+  "difficulty": "Intermediate",
+  "bpm": 100,
+  "timeSignature": "4/4",
+  "normalTempoMultiplier": 1.0,
+  "previewText": "Alternating quarter and eighth-note timing exercise.",
+  "notes": [
+    { "note": "C4", "beat": 0, "durationBeats": 0.5 },
+    { "note": "D4", "beat": 0.5, "durationBeats": 0.5 },
+    { "note": "E4", "beat": 1, "durationBeats": 1 },
+    { "note": "G4", "beat": 2, "durationBeats": 0.5 },
+    { "note": "A4", "beat": 2.5, "durationBeats": 0.5 },
+    { "note": "G4", "beat": 3, "durationBeats": 1 },
+    { "note": "F4", "beat": 4, "durationBeats": 0.5 },
+    { "note": "E4", "beat": 4.5, "durationBeats": 0.5 },
+    { "note": "D4", "beat": 5, "durationBeats": 1 },
+    { "note": "C4", "beat": 6, "durationBeats": 0.5 },
+    { "note": "D4", "beat": 6.5, "durationBeats": 0.5 },
+    { "note": "E4", "beat": 7, "durationBeats": 1 },
+    { "note": "F4", "beat": 8, "durationBeats": 0.5 },
+    { "note": "G4", "beat": 8.5, "durationBeats": 0.5 },
+    { "note": "A4", "beat": 9, "durationBeats": 1 },
+    { "note": "G4", "beat": 10, "durationBeats": 0.5 },
+    { "note": "F4", "beat": 10.5, "durationBeats": 0.5 },
+    { "note": "E4", "beat": 11, "durationBeats": 1 }
+  ]
+}

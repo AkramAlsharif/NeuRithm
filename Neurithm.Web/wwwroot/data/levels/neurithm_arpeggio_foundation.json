@@ -1,0 +1,28 @@
+{
+  "id": "neurithm_arpeggio_foundation",
+  "title": "Arpeggio Foundation",
+  "composer": "Neurithm",
+  "difficulty": "Intermediate",
+  "bpm": 88,
+  "timeSignature": "4/4",
+  "normalTempoMultiplier": 1.0,
+  "previewText": "Ascending and descending C major arpeggios.",
+  "notes": [
+    { "note": "C4", "beat": 0, "durationBeats": 1 },
+    { "note": "E4", "beat": 1, "durationBeats": 1 },
+    { "note": "G4", "beat": 2, "durationBeats": 1 },
+    { "note": "C5", "beat": 3, "durationBeats": 1 },
+    { "note": "B4", "beat": 4, "durationBeats": 1 },
+    { "note": "G4", "beat": 5, "durationBeats": 1 },
+    { "note": "E4", "beat": 6, "durationBeats": 1 },
+    { "note": "C4", "beat": 7, "durationBeats": 1 },
+    { "note": "D4", "beat": 8, "durationBeats": 1 },
+    { "note": "F4", "beat": 9, "durationBeats": 1 },
+    { "note": "A4", "beat": 10, "durationBeats": 1 },
+    { "note": "D5", "beat": 11, "durationBeats": 1 },
+    { "note": "C5", "beat": 12, "durationBeats": 1 },
+    { "note": "A4", "beat": 13, "durationBeats": 1 },
+    { "note": "F4", "beat": 14, "durationBeats": 1 },
+    { "note": "D4", "beat": 15, "durationBeats": 1 }
+  ]
+}

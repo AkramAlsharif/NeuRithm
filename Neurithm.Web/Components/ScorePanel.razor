@@ -4,22 +4,45 @@
     <div><strong>Score:</strong> @Score</div>
     <div><strong>Combo:</strong> @Combo</div>
     <div><strong>Accuracy:</strong> @AccuracyPercentage.ToString("0.0")%</div>
+    <div><strong>Misses:</strong> @Misses</div>
+    <div><strong>Perfect:</strong> @PerfectCount</div>
+    <div><strong>Good:</strong> @GoodCount</div>
+    <div><strong>Acceptable:</strong> @AcceptableCount</div>
+    <div><strong>Resolved:</strong> @TotalResolved</div>
+    <div><strong>Detected:</strong> @DetectedNote</div>
+    <div><strong>Target:</strong> @TargetNote</div>
+    <div><strong>Feedback:</strong> @TimingFeedback</div>
+    <div><strong>Tempo:</strong> @TempoMultiplier.ToString("0.00")x</div>
 </div>
 
 @code {
     [Parameter] public int Score { get; set; }
     [Parameter] public int Combo { get; set; }
     [Parameter] public double AccuracyPercentage { get; set; }
+    [Parameter] public int Misses { get; set; }
+    [Parameter] public int PerfectCount { get; set; }
+    [Parameter] public int GoodCount { get; set; }
+    [Parameter] public int AcceptableCount { get; set; }
+    [Parameter] public int TotalResolved { get; set; }
+    [Parameter] public string DetectedNote { get; set; } = "--";
+    [Parameter] public string TargetNote { get; set; } = "--";
+    [Parameter] public string TimingFeedback { get; set; } = "--";
+    [Parameter] public double TempoMultiplier { get; set; } = 1.0;
 }
 
 <style>
     .score-panel {
+        position: sticky;
+        top: 0;
+        z-index: 100;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
         padding: 10px;
-        border: 1px solid #ddd;
+        border: 1px solid #3b0764;
         border-radius: 8px;
-        background: #fff;
+        background: rgba(20, 4, 35, 0.92);
+        color: #f5edff;
+        box-shadow: 0 0 18px rgba(168,85,247,0.28);
     }
 </style>

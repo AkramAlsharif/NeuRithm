@@ -945,3 +945,29 @@ Anything outside that chain is secondary.
 - Kept JavaScript limited to microphone interop and error reporting only.
 - Kept gameplay logic in C# services.
 - Continued game-first vertical slice implementation with real level data loading.
+
+## 31. Progress Update (Game Visual Mode + Levels + Controls)
+
+### Completed in this step
+
+- Added Three.js visual layer from local workspace path `D:\web\NeuRithm\threejs`:
+  - copied `three.module.min.js` to `Neurithm.Web/wwwroot/lib/threejs/`
+  - added `Neurithm.Web/wwwroot/js/three-visuals.js` for sparkle-rain visual rendering
+- Updated game page for requested visual/gameplay behavior:
+  - black background gameplay shell
+  - purple glowing falling notes
+  - top sticky HUD (`ScorePanel`) with score/accuracy and related stats
+  - Play/Pause/Resume controls wired to C# game session state
+  - level picker wired to dynamic catalog
+- Expanded level content (dynamic JSON):
+  - fixed `levels-index.json` format
+  - added `mozart_twinkle_easy.json`
+  - added `neurithm_arpeggio_foundation.json`
+  - added `neurithm_rhythm_focus_01.json`
+- Improved microphone guidance for secure context trust requirement in browser.
+
+### Scope compliance
+
+- Kept microphone capture JS-only and gameplay logic in C#.
+- Kept hit detection/scoring/timing/adaptive tempo in application services.
+- Continued game-first implementation from directive with production-oriented dynamic level loading.

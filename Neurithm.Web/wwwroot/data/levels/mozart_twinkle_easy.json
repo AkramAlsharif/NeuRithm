@@ -1,0 +1,24 @@
+{
+  "id": "mozart_twinkle_easy",
+  "title": "Twinkle Twinkle - Easy",
+  "composer": "Mozart",
+  "difficulty": "Beginner",
+  "bpm": 80,
+  "timeSignature": "4/4",
+  "normalTempoMultiplier": 1.0,
+  "previewText": "Intro melody for timing practice.",
+  "notes": [
+    { "note": "C4", "beat": 0, "durationBeats": 1 },
+    { "note": "C4", "beat": 1, "durationBeats": 1 },
+    { "note": "G4", "beat": 2, "durationBeats": 1 },
+    { "note": "G4", "beat": 3, "durationBeats": 1 },
+    { "note": "A4", "beat": 4, "durationBeats": 1 },
+    { "note": "A4", "beat": 5, "durationBeats": 1 },
+    { "note": "G4", "beat": 6, "durationBeats": 2 },
+    { "note": "F4", "beat": 8, "durationBeats": 1 },
+    { "note": "F4", "beat": 9, "durationBeats": 1 },
+    { "note": "E4", "beat": 10, "durationBeats": 1 },
+    { "note": "E4", "beat": 11, "durationBeats": 1 },
+    { "note": "D4", "beat": 12, "durationBeats": 2 }
+  ]
+}

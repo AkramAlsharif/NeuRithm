@@ -153,7 +153,8 @@ Write-Log "IIS site restarted"
 $fileChecks = @(
     "index.html",
     "_framework\icudt_EFIGS.tptq2av103.dat",
-    "js\microphone.js"
+    "js\microphone.js",
+    "lib\threejs\three.module.min.js"
 )
 
 foreach ($fileCheck in $fileChecks) {

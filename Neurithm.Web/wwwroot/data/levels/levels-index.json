@@ -1,11 +1,20 @@
 [
   {
+    "id": "neurithm_first_steps_c_major",
+    "title": "First Steps - C Major",
+    "composer": "Neurithm",
+    "difficulty": "Beginner",
+    "bpm": 60,
+    "noteCount": 8,
+    "previewText": "A short microphone and timing validation level."
+  },
+  {
     "id": "beethoven_ode_to_joy_easy",
     "title": "Ode to Joy - Easy",
     "composer": "Beethoven",
     "difficulty": "Beginner",
     "bpm": 90,
-    "noteCount": 3,
+    "noteCount": 15,
     "previewText": "A short beginner-friendly classical melody."
   },
   {
@@ -14,7 +23,25 @@
     "composer": "Mozart",
     "difficulty": "Beginner",
     "bpm": 80,
-    "noteCount": 3,
-    "previewText": "A short beginner-friendly classical melody."
+    "noteCount": 12,
+    "previewText": "Intro melody for timing practice."
+  },
+  {
+    "id": "neurithm_arpeggio_foundation",
+    "title": "Arpeggio Foundation",
+    "composer": "Neurithm",
+    "difficulty": "Intermediate",
+    "bpm": 88,
+    "noteCount": 16,
+    "previewText": "Ascending and descending C major arpeggios."
+  },
+  {
+    "id": "neurithm_rhythm_focus_01",
+    "title": "Rhythm Focus 01",
+    "composer": "Neurithm",
+    "difficulty": "Intermediate",
+    "bpm": 100,
+    "noteCount": 18,
+    "previewText": "Alternating quarter and eighth-note timing exercise."
   }
 ]

@@ -16,13 +16,17 @@ This script performs all required deployment steps:
 - Publishes `Neurithm.Web/Neurithm.Web.csproj` to `D:\web\NeuRithm.net`
 - Copies `wwwroot` assets to IIS root for correct static routing
 - Writes IIS-compatible `web.config`
+- Ensures local hosts entries for `neurithm.net` and `www.neurithm.net`
+- Ensures HTTPS bindings and local certificate mapping for secure microphone context
 - Restarts IIS site `neurithm.net`
 - Runs file checks for:
   - `index.html`
   - `js\microphone.js`
-- Runs HTTP health checks for:
-  - `/`
-  - `/js/microphone.js`
+  - `lib\threejs\three.module.min.js`
+- Runs HTTPS health checks for:
+  - `https://neurithm.net/`
+  - `https://neurithm.net/js/microphone.js`
+  - `https://www.neurithm.net/`
 - Writes deployment logs to:
   - `./logs/iis-deploy.log`
   - `D:\web\NeuRithm.net\deployment-status.log`
@@ -62,6 +66,13 @@ This script performs all required deployment steps:
   - `./logs/iis-deploy.log`
   - `D:\web\NeuRithm.net\deployment-status.log`
 - If browser still uses stale JS fingerprints, hard refresh with `Ctrl+F5`.
+
+## Three.js Visual Runtime
+- Three.js local asset is served from:
+  - `Neurithm.Web/wwwroot/lib/threejs/three.module.min.js`
+- The gameplay page initializes Three.js sparkles/visual background from:
+  - `Neurithm.Web/wwwroot/js/three-visuals.js`
+- Keep game logic in C#; Three.js is visual-only.
 
 ---
 

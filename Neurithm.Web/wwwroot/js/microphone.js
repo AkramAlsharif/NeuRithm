@@ -7,7 +7,7 @@ window.neurithmMicrophone = {
 
     requestPermission: async function () {
         if (!window.isSecureContext) {
-            const message = "Microphone requires HTTPS secure context. Open https://neurithm.net or https://www.neurithm.net.";
+            const message = "Microphone requires HTTPS secure context. Open https://neurithm.net or https://www.neurithm.net and trust the local certificate in your browser/OS.";
             window.neurithmClientLogs?.write("Microphone", message);
             return { status: "blocked", errorMessage: message };
         }
@@ -33,7 +33,7 @@ window.neurithmMicrophone = {
 
     startCapture: async function (dotNetRef) {
         if (!window.isSecureContext) {
-            const message = "Microphone capture blocked: secure context required. Use HTTPS on neurithm.net domain.";
+            const message = "Microphone capture blocked: secure context required. Use HTTPS on neurithm.net and trust the local certificate.";
             window.neurithmClientLogs?.write("Microphone", message);
             return { started: false, blocked: true, errorMessage: message };
         }

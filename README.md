@@ -8,9 +8,10 @@ A rhythm-learning piano game built with .NET 10 and Blazor Web App. Neurithm use
 
 - **Real Piano Input:** Uses microphone to detect notes from a real physical piano
 - **Adaptive Difficulty:** Tempo adjusts based on your performance
-- **Data-Driven Levels:** Levels loaded from JSON for easy expansion
-- **User Profiles:** Create and manage multiple player profiles with progress tracking
-- **Avatar System:** 6 original anime-inspired characters
+- **Data-Driven Levels:** Multiple levels loaded from JSON for easy expansion
+- **Three.js Visual Mode:** Black-background gameplay scene with purple glowing notes and sparkle rain effects
+- **Top HUD Gameplay Stats:** Score, accuracy, combo, feedback, and tempo pinned at top during play
+- **Play/Pause Controls:** Start, pause, and resume gameplay timeline in-game
 - **Calibration Mode:** Fine-tune microphone sensitivity and frequency detection
 - **File-Based Storage:** All data stored as JSON (easily migratable to database)
 - **Clean Architecture:** Separation of concerns with Core, Application, Infrastructure, and Audio layers
