@@ -31,14 +31,6 @@
         </select>
     </div>
 
-    <Neurithm.Web.Components.MicrophoneStatusPanel
-        PermissionStatus="@permissionStatus"
-        LastError="@lastError"
-        IsCapturing="@isCapturing"
-        DetectedNote="@snapshot.CurrentDetectedNote"
-        FrequencyHz="@lastDetectedFrequencyHz"
-        Reliability="@lastDetectedReliability" />
-
     <Neurithm.Web.Components.ScorePanel
         Score="snapshot.Score"
         Combo="snapshot.Combo"
@@ -53,6 +45,25 @@
         AcceptableCount="snapshot.AcceptableCount"
         TotalResolved="snapshot.TotalResolved" />
 
+    <div class="mic-corner-panel">
+        <Neurithm.Web.Components.MicrophoneStatusPanel
+            PermissionStatus="@permissionStatus"
+            LastError="@lastError"
+            IsCapturing="@isCapturing"
+            DetectedNote="@snapshot.CurrentDetectedNote"
+            FrequencyHz="@lastDetectedFrequencyHz"
+            Reliability="@lastDetectedReliability" />
+    </div>
+
+    <div class="mic-sync-test mb-2">
+        <h5>Mic Sync Test (Real Piano)</h5>
+        <p class="small">Play a real piano key. If mic detection is synced, the matching on-screen key lights up below.</p>
+        <Neurithm.Web.Components.PianoKeyboard
+            Keys="extendedKeys"
+            ActiveNote="@snapshot.CurrentDetectedNote"
+            TargetNote="null" />
+    </div>
+
     <Neurithm.Web.Components.CountdownOverlay
         IsVisible="@snapshot.IsCountdown"
         CountdownValue="@snapshot.CountdownValue" />
@@ -62,7 +73,11 @@
     <Neurithm.Web.Components.FallingNotes Notes="snapshot.FallingNotes" />
     <Neurithm.Web.Components.HitLine />
     <Neurithm.Web.Components.TimingFeedback Feedback="snapshot.TimingFeedback" />
-    <Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="snapshot.CurrentDetectedNote" TargetNote="snapshot.CurrentTargetNote" />
+
+    <Neurithm.Web.Components.PianoKeyboard
+        Keys="extendedKeys"
+        ActiveNote="snapshot.CurrentDetectedNote"
+        TargetNote="snapshot.CurrentTargetNote" />
 
     @if (snapshot.IsCompleted)
     {
@@ -404,10 +419,27 @@
 
 <style>
     .game-page-shell {
+        position: relative;
         background: #020104;
         color: #f8f3ff;
         min-height: 100vh;
         padding: 12px;
+    }
+
+    .mic-corner-panel {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 280px;
+        z-index: 120;
+    }
+
+    .mic-sync-test {
+        border: 1px solid rgba(168,85,247,0.45);
+        border-radius: 8px;
+        padding: 10px;
+        background: rgba(20, 4, 35, 0.78);
+        box-shadow: 0 0 16px rgba(168,85,247,0.22);
     }
 
     .three-visuals-host {

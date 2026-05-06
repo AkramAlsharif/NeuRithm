@@ -1006,3 +1006,20 @@ Anything outside that chain is secondary.
 - Real note detection/processing remains in C# audio/game services.
 - Sync visualization is dynamic and driven from live mic detection events.
 - Gameplay start behavior remains controlled by C# game session state.
+
+## 34. Progress Update (Game Mic Sync Area + Corner Mic Monitor)
+
+### Completed in this step
+
+- Removed click-sound keyboard behavior from gameplay flow (screen keyboard remains visual feedback only).
+- Tuned default pitch detector thresholds for more responsive real-piano pickup while preserving reliability gating.
+- Updated `Game.razor` layout to keep controls/HUD on the black gameplay screen and added:
+  - dedicated mic sync test area for real-piano verification
+  - top-right corner microphone monitor panel showing detected note/frequency/reliability
+- Preserved dynamic game loop and note-highlighting flow from live microphone detections.
+
+### Scope compliance
+
+- Note highlighting is driven by real mic detections, not screen key clicks.
+- Gameplay scoring/hit logic remains in C#.
+- UI changes remain focused on synchronization visibility and game-first flow.
