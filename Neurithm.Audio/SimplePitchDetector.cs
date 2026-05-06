@@ -26,7 +26,10 @@ public sealed class SimplePitchDetector : IPitchDetector
             MinRmsForDetection = _options.MinRmsForDetection,
             MinConfidence = _options.MinConfidence,
             MinStableDetections = _options.MinStableDetections,
-            DebounceMilliseconds = _options.DebounceMilliseconds
+            DebounceMilliseconds = _options.DebounceMilliseconds,
+            LowPassCutoffHz = _options.LowPassCutoffHz,
+            PianoRangeMarginSemitones = _options.PianoRangeMarginSemitones,
+            MaxCentsFromNearestNote = _options.MaxCentsFromNearestNote
         };
 
     public void UpdateOptions(PitchDetectorOptions options)
@@ -39,7 +42,10 @@ public sealed class SimplePitchDetector : IPitchDetector
             MinRmsForDetection = options.MinRmsForDetection,
             MinConfidence = options.MinConfidence,
             MinStableDetections = options.MinStableDetections,
-            DebounceMilliseconds = options.DebounceMilliseconds
+            DebounceMilliseconds = options.DebounceMilliseconds,
+            LowPassCutoffHz = options.LowPassCutoffHz,
+            PianoRangeMarginSemitones = options.PianoRangeMarginSemitones,
+            MaxCentsFromNearestNote = options.MaxCentsFromNearestNote
         };
 
         ResetStability();
@@ -62,6 +68,7 @@ public sealed class SimplePitchDetector : IPitchDetector
         }
 
         var conditioned = PrepareSignal(audioBuffer);
+        ApplyOnePoleLowPassInPlace(conditioned, sampleRate, _options.LowPassCutoffHz);
 
         var minLag = Math.Max(1, (int)Math.Floor(sampleRate / _options.MaxFrequencyHz));
         var maxLag = Math.Min(conditioned.Length / 2, (int)Math.Ceiling(sampleRate / _options.MinFrequencyHz));
@@ -103,10 +110,21 @@ public sealed class SimplePitchDetector : IPitchDetector
             return CreateUnreliable("--", frequencyHz, bestScore, 0.0, rms, detectedAtUtc);
         }
 
+        var noteNumber = FrequencyToMidiNoteNumber(frequencyHz, _options.A4FrequencyHz);
+        var nearestMidi = (int)Math.Round(noteNumber);
+        var centsFromNearest = 100.0 * (noteNumber - nearestMidi);
+
+        if (!IsWithinPianoRange(nearestMidi, _options.PianoRangeMarginSemitones)
+            || Math.Abs(centsFromNearest) > _options.MaxCentsFromNearestNote)
+        {
+            ResetStability();
+            return CreateUnreliable("--", frequencyHz, bestScore, centsFromNearest, rms, detectedAtUtc);
+        }
+
         var correlationScore = normalized[correctedLag - minLag];
         var confidence = Clamp01(correlationScore);
-        var noteName = ToNoteName(frequencyHz, _options.A4FrequencyHz);
-        var centsOffset = CalculateCentsOffset(frequencyHz, noteName, _options.A4FrequencyHz);
+        var noteName = MidiToNoteName(nearestMidi);
+        var centsOffset = centsFromNearest;
 
         var isReliable = confidence >= _options.MinConfidence && UpdateStability(noteName, detectedAtUtc);
         return new DetectedNoteResult(noteName, frequencyHz, confidence, centsOffset, rms, detectedAtUtc, isReliable);
@@ -212,57 +230,22 @@ public sealed class SimplePitchDetector : IPitchDetector
     private static double Clamp01(double value)
         => value < 0.0 ? 0.0 : value > 1.0 ? 1.0 : value;
 
-    private static string ToNoteName(double frequencyHz, double a4FrequencyHz)
+    private static double FrequencyToMidiNoteNumber(double frequencyHz, double a4FrequencyHz)
+        => 12 * Math.Log2(frequencyHz / a4FrequencyHz) + 69;
+
+    private static string MidiToNoteName(int midi)
     {
-        var noteNumber = 12 * Math.Log2(frequencyHz / a4FrequencyHz) + 69;
-        var midi = (int)Math.Round(noteNumber);
         var octave = (midi / 12) - 1;
         var name = NoteNames[(midi % 12 + 12) % 12];
         return $"{name}{octave}";
     }
 
-    private static double CalculateCentsOffset(double frequencyHz, string detectedNoteName, double a4FrequencyHz)
+    private static bool IsWithinPianoRange(int nearestMidi, double marginSemitones)
     {
-        var midi = NoteNameToMidi(detectedNoteName);
-        var nearestFrequency = a4FrequencyHz * Math.Pow(2.0, (midi - 69) / 12.0);
-        return 1200.0 * Math.Log2(frequencyHz / nearestFrequency);
-    }
+        const int pianoMinMidi = 21; // A0
+        const int pianoMaxMidi = 108; // C8
 
-    private static int NoteNameToMidi(string noteName)
-    {
-        if (string.IsNullOrWhiteSpace(noteName) || noteName.Length < 2)
-        {
-            return 69;
-        }
-
-        var pitch = noteName.Length >= 3 && noteName[1] == '#'
-            ? noteName[..2]
-            : noteName[..1];
-
-        var octavePart = noteName[pitch.Length..];
-        if (!int.TryParse(octavePart, out var octave))
-        {
-            octave = 4;
-        }
-
-        var semitone = pitch switch
-        {
-            "C" => 0,
-            "C#" => 1,
-            "D" => 2,
-            "D#" => 3,
-            "E" => 4,
-            "F" => 5,
-            "F#" => 6,
-            "G" => 7,
-            "G#" => 8,
-            "A" => 9,
-            "A#" => 10,
-            "B" => 11,
-            _ => 9
-        };
-
-        return (octave + 1) * 12 + semitone;
+        return nearestMidi >= pianoMinMidi - marginSemitones && nearestMidi <= pianoMaxMidi + marginSemitones;
     }
 
     private static DetectedNoteResult CreateUnreliable(
@@ -295,6 +278,25 @@ public sealed class SimplePitchDetector : IPitchDetector
         }
 
         return prepared;
+    }
+
+    private static void ApplyOnePoleLowPassInPlace(float[] samples, int sampleRate, double cutoffHz)
+    {
+        if (samples.Length == 0 || sampleRate <= 0 || cutoffHz <= 0)
+        {
+            return;
+        }
+
+        var dt = 1.0 / sampleRate;
+        var rc = 1.0 / (2.0 * Math.PI * cutoffHz);
+        var alpha = dt / (rc + dt);
+
+        double y = samples[0];
+        for (var i = 1; i < samples.Length; i++)
+        {
+            y = y + alpha * (samples[i] - y);
+            samples[i] = (float)y;
+        }
     }
 
     private static int PreferFundamentalLag(int bestLag, int minLag, int maxLag, double[] normalized, double bestScore)

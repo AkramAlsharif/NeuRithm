@@ -9,6 +9,9 @@ public sealed class PitchDetectorOptions
     public double MinConfidence { get; set; } = 0.42;
     public int MinStableDetections { get; set; } = 1;
     public int DebounceMilliseconds { get; set; } = 80;
+    public double LowPassCutoffHz { get; set; } = 2400.0;
+    public double PianoRangeMarginSemitones { get; set; } = 0.35;
+    public double MaxCentsFromNearestNote { get; set; } = 45.0;
 }
 
 public interface IPitchDetector

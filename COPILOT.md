@@ -1109,3 +1109,31 @@ Anything outside that chain is secondary.
   - rendered microphone list box
   - loads available devices dynamically
   - saves selected device and reuses it for capture
+
+````````
+
+## 39. Progress Update (Shared-First Pitch Filtering: Low-Pass + Piano-Range Gate)
+
+### Completed in this step
+
+- Implemented shared/runtime filtering helpers inside the detector pipeline and kept feature flow as orchestration:
+  - one-pole low-pass prefilter for incoming mic signal
+  - bounded piano-range gate with semitone margin
+  - between-key rejection using configurable cents distance from nearest key
+- Extended detector options to keep behavior dynamic/configurable without hardcoded gameplay assumptions.
+
+### Technical changes
+
+- `Neurithm.Audio/IPitchDetector.cs`
+  - added `LowPassCutoffHz`
+  - added `PianoRangeMarginSemitones`
+  - added `MaxCentsFromNearestNote`
+- `Neurithm.Audio/SimplePitchDetector.cs`
+  - added `ApplyOnePoleLowPassInPlace(...)`
+  - added piano-range + between-key filtering using nearest MIDI note + cents bounds
+  - kept core gameplay note recognition orchestration thin and dynamic through options
+
+### Expected result
+
+- Better rejection of non-piano noise and unstable harmonic content.
+- More accurate key recognition from real piano input with fewer false positives.
