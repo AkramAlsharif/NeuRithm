@@ -145,7 +145,10 @@
         }
         else
         {
-            displayedNote = "No reliable note";
+            displayedNote = string.IsNullOrWhiteSpace(detection.NoteName) || detection.NoteName == "--"
+                ? "No reliable note"
+                : $"{detection.NoteName} (unreliable)";
+            activeNote = detection.NoteName == "--" ? activeNote : detection.NoteName;
         }
 
         return InvokeAsync(StateHasChanged);

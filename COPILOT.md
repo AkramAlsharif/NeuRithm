@@ -1023,3 +1023,22 @@ Anything outside that chain is secondary.
 - Note highlighting is driven by real mic detections, not screen key clicks.
 - Gameplay scoring/hit logic remains in C#.
 - UI changes remain focused on synchronization visibility and game-first flow.
+
+## 35. Progress Update (Calibration Mic Frame Flow Fix)
+
+### Completed in this step
+
+- Hardened browser microphone capture in `wwwroot/js/microphone.js` to improve real-time frame delivery:
+  - disabled browser voice-processing effects for piano capture
+  - ensured `AudioContext` resume on start
+  - connected analyser to a muted pull node to keep processing graph active across browsers
+  - increased frame polling cadence for more responsive updates
+  - added defensive client logging around frame invoke/read failures
+- Improved calibration visibility in `Calibration.razor`:
+  - when detection is present but not yet reliable, UI now shows `<note> (unreliable)` instead of always `No reliable note`
+  - keeps note-light feedback visible during threshold tuning
+
+### Expected user-visible result
+
+- On calibration start, frequency/RMS/confidence should now move while real piano notes are played.
+- On-screen key highlight should appear as soon as note candidates are observed, then stabilize as reliable detections are reached.
