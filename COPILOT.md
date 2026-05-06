@@ -1192,3 +1192,33 @@ Anything outside that chain is secondary.
 
 - When mic detects a note, the corresponding `<div class="piano-key white-key ...">` or black key lights up immediately.
 - Key highlight follows live note state and clears correctly when detection drops.
+
+## 42. Progress Update (Responsive Fit-to-Container Hardening Across Pages)
+
+### Completed in this step
+
+- Implemented global responsive guards to prevent horizontal overflow and keep pages within viewport.
+- Hardened main layout containers so content fits screen width on desktop/mobile.
+- Updated game page responsive behavior:
+  - controls wrap safely
+  - corner mic panel collapses into normal flow on smaller screens
+  - visual host and panels clamp to container width
+
+### Files updated
+
+- `Neurithm.Web/wwwroot/css/app.css`
+  - global `box-sizing` normalization
+  - viewport overflow protection (`overflow-x: hidden`)
+  - safe media sizing and long-content wrapping
+- `Neurithm.Web/Layout/MainLayout.razor.css`
+  - responsive width/overflow constraints for page/main/top-row/sidebar
+- `Neurithm.Web/Pages/Game.razor`
+  - fit-to-container responsive CSS and mobile breakpoints
+
+### Shared-first note-detection status
+
+- Shared filtering pipeline remains active from prior steps:
+  - low-pass filtering
+  - out-of-piano range rejection with margin
+  - between-key cents rejection
+  - averaged bounded materialization to reduce rapid noisy flips
