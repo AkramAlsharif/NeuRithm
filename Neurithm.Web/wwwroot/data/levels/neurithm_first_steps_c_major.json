@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "neurithm_first_steps_c_major",
+  "title": "First Steps - C Major",
+  "composer": "Neurithm",
+  "difficulty": "Beginner",
+  "bpm": 60,
+  "timeSignature": "4/4",
+  "normalTempoMultiplier": 1.0,
+  "previewText": "A short microphone and timing validation level.",
+  "notes": [
+    { "note": "C4", "beat": 0, "durationBeats": 1 },
+    { "note": "D4", "beat": 1, "durationBeats": 1 },
+    { "note": "E4", "beat": 2, "durationBeats": 1 },
+    { "note": "F4", "beat": 3, "durationBeats": 1 },
+    { "note": "G4", "beat": 4, "durationBeats": 1 },
+    { "note": "A4", "beat": 5, "durationBeats": 1 },
+    { "note": "B4", "beat": 6, "durationBeats": 1 },
+    { "note": "C5", "beat": 7, "durationBeats": 2 }
+  ]
+}

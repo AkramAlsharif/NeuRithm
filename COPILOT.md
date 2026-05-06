@@ -902,3 +902,46 @@ Anything outside that chain is secondary.
 - No manual gameplay buttons were added.
 - No game logic moved to JavaScript.
 - Focus remained on game-first playable vertical-slice behavior.
+
+## 29. Progress Update (HTTPS Microphone Unblock)
+
+### Completed in this step
+
+- Updated `scripts/Publish-IIS.ps1` to enforce local HTTPS readiness for microphone secure-context requirements.
+- Added automatic hosts verification for:
+  - `127.0.0.1 neurithm.net`
+  - `127.0.0.1 www.neurithm.net`
+- Added automatic local self-signed certificate creation/reuse for:
+  - `neurithm.net`
+  - `www.neurithm.net`
+- Added IIS HTTPS bindings and certificate mapping for both hostnames.
+- Switched deployment health checks to HTTPS URLs.
+- Updated microphone JS secure-context error messages to clearly instruct opening:
+  - `https://neurithm.net`
+  - `https://www.neurithm.net`
+
+### Scope compliance
+
+- Kept JavaScript as thin microphone interop only.
+- No gameplay scoring/timing logic moved to JavaScript.
+- Continued game-first implementation path and removed deployment ambiguity for microphone access.
+
+## 30. Progress Update (Secure Microphone + Level Runtime Paths)
+
+### Completed in this step
+
+- Fixed local secure-context microphone blocker by automating HTTPS setup in `scripts/Publish-IIS.ps1`:
+  - hosts entries validation for `neurithm.net` and `www.neurithm.net`
+  - self-signed cert create/reuse
+  - HTTPS IIS bindings for both domains
+  - HTTPS endpoint health checks
+- Updated microphone secure-context error messages in `wwwroot/js/microphone.js` with explicit HTTPS domain guidance.
+- Added runtime level files under `wwwroot/data/levels` to fix game-level 404 loading at runtime:
+  - `neurithm_first_steps_c_major.json`
+  - `beethoven_ode_to_joy_easy.json`
+
+### Scope compliance
+
+- Kept JavaScript limited to microphone interop and error reporting only.
+- Kept gameplay logic in C# services.
+- Continued game-first vertical slice implementation with real level data loading.

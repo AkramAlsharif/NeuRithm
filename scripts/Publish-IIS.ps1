@@ -26,9 +26,71 @@ function Write-Log {
     Write-Host $entry
 }
 
+function Ensure-HostsEntry {
+    param([string]$HostName)
+
+    $hostsPath = "$env:WINDIR\System32\drivers\etc\hosts"
+    $entry = "127.0.0.1 $HostName"
+
+    $current = Get-Content -Path $hostsPath -ErrorAction SilentlyContinue
+    if ($current -notcontains $entry) {
+        Add-Content -Path $hostsPath -Value $entry
+        Write-Log "Hosts entry added: $entry"
+    }
+    else {
+        Write-Log "Hosts entry exists: $entry"
+    }
+}
+
+function Ensure-HttpsBinding {
+    param(
+        [string]$TargetSite,
+        [string]$HostName,
+        [string]$Thumbprint
+    )
+
+    $binding = Get-WebBinding -Name $TargetSite -Protocol https -HostHeader $HostName -ErrorAction SilentlyContinue
+    if (-not $binding) {
+        New-WebBinding -Name $TargetSite -Protocol https -Port 443 -HostHeader $HostName -SslFlags 1 | Out-Null
+        Write-Log "HTTPS binding added for $HostName"
+        $binding = Get-WebBinding -Name $TargetSite -Protocol https -HostHeader $HostName -ErrorAction SilentlyContinue
+    }
+    else {
+        Write-Log "HTTPS binding exists for $HostName"
+    }
+
+    if ($null -eq $binding) {
+        throw "Unable to resolve HTTPS binding for host '$HostName'."
+    }
+
+    $binding.AddSslCertificate($Thumbprint, "My")
+    Write-Log "HTTPS certificate mapped for $HostName"
+}
+
 Write-Log "Starting IIS publish for Neurithm"
 Write-Log "ProjectPath: $ProjectPath"
 Write-Log "PublishPath: $PublishPath"
+
+Import-Module WebAdministration
+
+Ensure-HostsEntry -HostName "neurithm.net"
+Ensure-HostsEntry -HostName "www.neurithm.net"
+
+$cert = Get-ChildItem Cert:\LocalMachine\My |
+    Where-Object { $_.Subject -eq "CN=neurithm.net" } |
+    Sort-Object NotAfter -Descending |
+    Select-Object -First 1
+
+if (-not $cert) {
+    $cert = New-SelfSignedCertificate -DnsName "neurithm.net", "www.neurithm.net" -CertStoreLocation "Cert:\LocalMachine\My" -FriendlyName "Neurithm Local HTTPS"
+    Write-Log "Created self-signed HTTPS certificate: $($cert.Thumbprint)"
+}
+else {
+    Write-Log "Using existing HTTPS certificate: $($cert.Thumbprint)"
+}
+
+Ensure-HttpsBinding -TargetSite $SiteName -HostName "neurithm.net" -Thumbprint $cert.Thumbprint
+Ensure-HttpsBinding -TargetSite $SiteName -HostName "www.neurithm.net" -Thumbprint $cert.Thumbprint
 
 dotnet publish $ProjectPath -c Release -o $PublishPath
 Write-Log "dotnet publish completed"
@@ -105,26 +167,26 @@ foreach ($fileCheck in $fileChecks) {
     }
 }
 
-$baseUrl = "http://neurithm.net"
 $checks = @(
-    "/",
-    "/js/microphone.js"
+    "https://neurithm.net/",
+    "https://neurithm.net/js/microphone.js",
+    "https://www.neurithm.net/"
 )
 
-foreach ($path in $checks) {
-    $url = "$baseUrl$path"
-    try {
-        $response = Invoke-WebRequest -Uri $url -UseBasicParsing -Method Head
-        Write-Log "Health check PASS $url [$($response.StatusCode)]"
+foreach ($url in $checks) {
+    $statusCode = & curl.exe --insecure --silent --output NUL --write-out "%{http_code}" --head $url
+
+    if ($statusCode -eq "200") {
+        Write-Log "Health check PASS $url [$statusCode]"
     }
-    catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "N/A" }
+    else {
         Write-Log "Health check FAIL $url [$statusCode]"
-        throw
+        throw "Health check failed for $url with status $statusCode"
     }
 }
 
 Write-Log "IIS publish finished successfully"
+Write-Log "IMPORTANT: trust the local certificate in your browser/OS to ensure secure-context microphone access on HTTPS"
 
 $w3svcFolder = "C:\inetpub\logs\LogFiles\W3SVC3"
 if (Test-Path $w3svcFolder) {
