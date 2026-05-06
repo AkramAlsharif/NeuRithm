@@ -34,7 +34,10 @@
     <Neurithm.Web.Components.MicrophoneStatusPanel
         PermissionStatus="@permissionStatus"
         LastError="@lastError"
-        IsCapturing="@isCapturing" />
+        IsCapturing="@isCapturing"
+        DetectedNote="@snapshot.CurrentDetectedNote"
+        FrequencyHz="@lastDetectedFrequencyHz"
+        Reliability="@lastDetectedReliability" />
 
     <Neurithm.Web.Components.ScorePanel
         Score="snapshot.Score"
@@ -85,6 +88,9 @@
     private string? lastError;
 
     private bool resultSaved;
+
+    private double lastDetectedFrequencyHz;
+    private string lastDetectedReliability = "--";
 
     private IReadOnlyList<Neurithm.Web.Models.LevelSummary> availableLevels = [];
 
@@ -224,7 +230,7 @@
             return;
         }
 
-        GameSessionService.StartCountdown(3);
+        GameSessionService.StartCountdown(0);
         snapshot = GameSessionService.GetSnapshot();
         resultSaved = false;
 
@@ -233,7 +239,7 @@
         gameLoopTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
 
         _ = RunGameLoopAsync(gameLoopTimer);
-        await ClientLogService.WriteAsync("Game", "Level countdown started");
+        await ClientLogService.WriteAsync("Game", "Level started instantly");
     }
 
     private Task PauseLevelAsync()
@@ -298,6 +304,9 @@
 
     private Task OnDetectionAvailableAsync(Neurithm.Audio.DetectedNoteResult detection)
     {
+        lastDetectedFrequencyHz = detection.FrequencyHz;
+        lastDetectedReliability = detection.IsReliable ? "Reliable" : "Unreliable";
+
         GameSessionService.RegisterDetection(detection);
         snapshot = GameSessionService.GetSnapshot();
         return InvokeAsync(StateHasChanged);

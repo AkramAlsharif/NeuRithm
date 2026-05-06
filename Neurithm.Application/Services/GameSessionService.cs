@@ -73,13 +73,25 @@ public sealed class GameSessionService : IGameSessionService
             return;
         }
 
-        _isCountdown = true;
-        _isRunning = false;
-        _isCompleted = false;
-        _countdownValue = Math.Clamp(seconds, 1, 9);
-        _countdownRemainingMs = _countdownValue * 1000.0;
         _elapsedSongMs = 0.0;
         _lastRawElapsedMs = 0.0;
+        _isCompleted = false;
+        _isPaused = false;
+
+        if (seconds <= 0)
+        {
+            _isCountdown = false;
+            _isRunning = true;
+            _countdownValue = 0;
+            _countdownRemainingMs = 0.0;
+            _timingFeedback = "Playing";
+            return;
+        }
+
+        _isCountdown = true;
+        _isRunning = false;
+        _countdownValue = Math.Clamp(seconds, 1, 9);
+        _countdownRemainingMs = _countdownValue * 1000.0;
     }
 
     public void Pause()

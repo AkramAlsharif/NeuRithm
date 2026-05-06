@@ -1,0 +1,39 @@
+@namespace Neurithm.Web.Components
+
+<div class="mic-status-panel">
+    <p><strong>Permission status:</strong> @PermissionStatus</p>
+    <p><strong>Capture status:</strong> @(IsCapturing ? "Running" : "Stopped")</p>
+    <p><strong>Live detected note:</strong> @DetectedNote</p>
+    @if (FrequencyHz > 0)
+    {
+        <p><strong>Frequency:</strong> @FrequencyHz.ToString("0.00") Hz</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Reliability))
+    {
+        <p><strong>Reliability:</strong> @Reliability</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(LastError))
+    {
+        <p class="text-danger"><strong>Microphone error:</strong> @LastError</p>
+    }
+</div>
+
+@code {
+    [Parameter] public string PermissionStatus { get; set; } = "Not requested";
+    [Parameter] public string? LastError { get; set; }
+    [Parameter] public bool IsCapturing { get; set; }
+    [Parameter] public string DetectedNote { get; set; } = "--";
+    [Parameter] public double FrequencyHz { get; set; }
+    [Parameter] public string? Reliability { get; set; }
+}
+
+<style>
+    .mic-status-panel {
+        border: 1px solid rgba(168,85,247,.45);
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background: rgba(20, 4, 35, 0.85);
+        color: #f8f3ff;
+    }
+</style>

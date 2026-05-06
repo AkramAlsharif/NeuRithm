@@ -989,3 +989,20 @@ Anything outside that chain is secondary.
 - Falling-note direction remains computed in C# game session logic.
 - Piano click is visual/audio interop only.
 - Core gameplay scoring/hit logic remains in C# application services.
+
+## 33. Progress Update (Live Piano Sync Visibility + Instant Play)
+
+### Completed in this step
+
+- Added live microphone detection telemetry directly into `MicrophoneStatusPanel`:
+  - detected note
+  - frequency Hz
+  - reliability state
+- Wired panel updates in both `Calibration` and `Game` pages so real piano key presses detected by mic are immediately visible.
+- Updated game Play flow to start falling notes instantly (no countdown delay) when Play is clicked.
+
+### Scope compliance
+
+- Real note detection/processing remains in C# audio/game services.
+- Sync visualization is dynamic and driven from live mic detection events.
+- Gameplay start behavior remains controlled by C# game session state.
