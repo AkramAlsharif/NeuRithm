@@ -281,8 +281,9 @@ public sealed class GameSessionService : IGameSessionService
         foreach (var state in _states)
         {
             var offsetMs = state.StartTimeMs - _elapsedSongMs;
-            var top = 100.0 - (((approachMs - offsetMs) / approachMs) * 100.0);
-            top = Math.Clamp(top, -10.0, 120.0);
+            var progress = (approachMs - offsetMs) / approachMs;
+            var top = progress * 100.0;
+            top = Math.Clamp(top, -12.0, 120.0);
 
             var durationRatio = state.DurationMs / approachMs;
             var height = Math.Clamp(durationRatio * 100.0, 4.0, 24.0);

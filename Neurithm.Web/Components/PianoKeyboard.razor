@@ -1,9 +1,16 @@
 @namespace Neurithm.Web.Components
+@inject IJSRuntime JSRuntime
 
 <div class="piano-keyboard">
     @foreach (var key in Keys)
     {
-        <div class="piano-key @(IsBlackKey(key) ? "black-key" : "white-key") @(IsDetected(key) ? "detected" : null) @(IsTarget(key) ? "target" : null)">@key</div>
+        var isPressed = pressedKeys.Contains(key);
+        <div class="piano-key @(IsBlackKey(key) ? "black-key" : "white-key") @(IsDetected(key) ? "detected" : null) @(IsTarget(key) ? "target" : null) @(isPressed ? "pressed" : null)"
+             @onpointerdown="() => OnKeyDownAsync(key)"
+             @onpointerup="() => OnKeyUpAsync(key)"
+             @onpointerleave="() => OnKeyUpAsync(key)">
+            @key
+        </div>
     }
 </div>
 
@@ -17,6 +24,8 @@
     [Parameter]
     public string? TargetNote { get; set; }
 
+    private readonly HashSet<string> pressedKeys = new(StringComparer.OrdinalIgnoreCase);
+
     private static bool IsBlackKey(string key)
         => key.Contains('#', StringComparison.Ordinal);
 
@@ -25,6 +34,22 @@
 
     private bool IsTarget(string key)
         => !string.IsNullOrWhiteSpace(TargetNote) && string.Equals(key, TargetNote, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OnKeyDownAsync(string key)
+    {
+        if (pressedKeys.Add(key))
+        {
+            await JSRuntime.InvokeVoidAsync("neurithmPianoAudio.noteOn", key);
+        }
+    }
+
+    private async Task OnKeyUpAsync(string key)
+    {
+        if (pressedKeys.Remove(key))
+        {
+            await JSRuntime.InvokeVoidAsync("neurithmPianoAudio.noteOff", key);
+        }
+    }
 }
 
 <style>
@@ -51,6 +76,9 @@
         font-size: 0.62rem;
         border: 1px solid #b8b8b8;
         user-select: none;
+        touch-action: none;
+        cursor: pointer;
+        transition: background-color 0.08s ease, filter 0.08s ease;
     }
 
     .white-key {
@@ -66,6 +94,14 @@
         margin-left: -6px;
         margin-right: -6px;
         z-index: 2;
+    }
+
+    .white-key.pressed {
+        background: #dcdcdc;
+    }
+
+    .black-key.pressed {
+        filter: brightness(1.35);
     }
 
     .piano-key.detected {

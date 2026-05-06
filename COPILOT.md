@@ -971,3 +971,21 @@ Anything outside that chain is secondary.
 - Kept microphone capture JS-only and gameplay logic in C#.
 - Kept hit detection/scoring/timing/adaptive tempo in application services.
 - Continued game-first implementation from directive with production-oriented dynamic level loading.
+
+## 32. Progress Update (Downward Notes + Clickable Piano Keys)
+
+### Completed in this step
+
+- Updated game session visual mapping so notes move downward on screen over time.
+- Upgraded `PianoKeyboard.razor` to be interactive:
+  - pointer press activates key state
+  - white keys tint slightly gray while pressed
+  - state clears on release/leave
+- Added note click sound playback via new `wwwroot/js/piano-audio.js`.
+- Wired piano audio script in `wwwroot/index.html`.
+
+### Scope compliance
+
+- Falling-note direction remains computed in C# game session logic.
+- Piano click is visual/audio interop only.
+- Core gameplay scoring/hit logic remains in C# application services.
