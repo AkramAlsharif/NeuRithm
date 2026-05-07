@@ -425,13 +425,18 @@
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
-        padding: 14px 12px 12px;
-        --score-panel-top: 74px;
+        padding: 12px 10px 10px;
+        --score-panel-top: 110px;
+    }
+
+    .game-page-shell h1 {
+        margin-bottom: 0.35rem;
+        font-size: clamp(1.2rem, 2.2vw, 1.6rem);
     }
 
     .top-controls-row {
-        margin-top: 26px;
-        margin-bottom: 10px;
+        margin-top: 10px;
+        margin-bottom: 6px;
     }
 
     .top-controls,
@@ -443,12 +448,22 @@
 
     .top-controls .btn {
         min-width: 0;
-        flex: 1 1 140px;
+        flex: 1 1 130px;
+        padding-block: 0.35rem;
+    }
+
+    .level-pick {
+        max-width: min(420px, 100%);
+        margin-bottom: 6px !important;
+    }
+
+    .level-pick .form-label {
+        margin-bottom: 0.25rem;
     }
 
     .mic-corner-panel {
         position: fixed;
-        top: 72px;
+        top: 104px;
         right: 10px;
         width: min(280px, calc(100vw - 20px));
         max-width: calc(100vw - 20px);
@@ -457,15 +472,11 @@
 
     .three-visuals-host {
         width: 100%;
-        height: min(280px, 36vh);
+        height: min(170px, 24vh);
         border: 1px solid rgba(168,85,247,0.45);
         border-radius: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         box-shadow: 0 0 24px rgba(168,85,247,0.25);
-    }
-
-    .level-pick {
-        max-width: min(420px, 100%);
     }
 
     @@media (max-width: 991.98px) {
@@ -477,21 +488,25 @@
             position: static;
             width: 100%;
             max-width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
     }
 
     @@media (max-width: 575.98px) {
         .game-page-shell {
-            padding: 10px 8px;
+            padding: 8px 6px;
         }
 
         .top-controls-row {
-            margin-top: 14px;
+            margin-top: 6px;
         }
 
         .top-controls .btn {
             flex: 1 1 100%;
+        }
+
+        .three-visuals-host {
+            height: min(130px, 20vh);
         }
     }
 </style>

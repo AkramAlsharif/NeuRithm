@@ -1321,3 +1321,39 @@ Anything outside that chain is secondary.
 - Notes travel smoothly through the full board and align better with hit area.
 - Play/Pause/Resume and HUD are lower and more visible while playing.
 - Detected note highlight stays active on the in-game piano.
+
+## 46. Progress Update (Single-Piano Gameplay Visibility + Faster Note Lighting)
+
+### Problem addressed
+
+- Real piano note lighting in game still felt unresponsive.
+- Gameplay controls/HUD required further lowering/compaction to avoid constant scrolling.
+- Keep game on a single piano layout.
+
+### Completed in this step
+
+- `Game.razor`
+  - Kept single in-game piano (no duplicate keyboard sections).
+  - Compact/lower gameplay chrome for always-visible play context:
+    - reduced title spacing
+    - lowered controls row
+    - lowered HUD anchor via `--score-panel-top`
+    - lowered mic panel top
+    - reduced Three.js visual host height to keep interactive area in view
+- `IPitchDetector` defaults tuned for faster visible note-light response while retaining bounded filtering:
+  - lower RMS and confidence thresholds
+  - shorter debounce and smoothing window
+  - lower minimum averaging sample count
+  - lower dominant vote threshold
+  - slightly lower correlation peak threshold
+
+### Shared-first alignment
+
+- Exact filtering and bounded materialization remain centralized in runtime detector helpers.
+- UI stays skinny orchestration over detector/session outputs.
+
+### Expected result
+
+- In-game detected note lighting should react faster to real piano input.
+- One piano only in game.
+- Less vertical scrolling during gameplay; controls/HUD stay lower and visible.
