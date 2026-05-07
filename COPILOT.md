@@ -1222,3 +1222,31 @@ Anything outside that chain is secondary.
   - out-of-piano range rejection with margin
   - between-key cents rejection
   - averaged bounded materialization to reduce rapid noisy flips
+
+## 43. Progress Update (Hit Timing Fix + No-Gap Piano Layout)
+
+### Problem addressed
+
+- User played correct notes on time but game still registered misses.
+- Game piano visual had gaps/holes and needed calibration-style continuous look.
+
+### Completed in this step
+
+- Implemented gameplay timing compensation for mic-detection latency:
+  - added bounded compensation window in `GameSessionService` so reliable detected notes are matched against compensated song-time.
+  - miss resolution now waits for compensated window before marking unresolved notes as miss.
+- Rebuilt `PianoKeyboard` rendering to eliminate holes:
+  - white-key base row with black-key absolute overlay layout
+  - dynamic key positioning from note list
+  - retained mic-detected highlighting and target styling
+  - mobile-friendly responsive sizing
+
+### Shared-first alignment
+
+- Feature flow remains skinny orchestration in page/game layers.
+- Runtime/shared logic handles timing math and bounded materialization behavior.
+
+### Expected result
+
+- Correctly timed real-note hits should score instead of being incorrectly marked miss.
+- Piano now appears continuous and visually improved (no holes) while still lighting the detected note.

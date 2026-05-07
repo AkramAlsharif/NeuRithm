@@ -1,16 +1,32 @@
 @namespace Neurithm.Web.Components
 
 <div class="piano-keyboard">
-    @foreach (var key in Keys)
-    {
-        var isPressed = PressedKeys.Contains(key);
-        var isDetected = IsDetected(key);
-        var isTarget = IsTarget(key);
+    <div class="white-keys-row">
+        @foreach (var key in whiteKeys)
+        {
+            var isPressed = PressedKeys.Contains(key.NoteName);
+            var isDetected = IsDetected(key.NoteName);
+            var isTarget = IsTarget(key.NoteName);
 
-        <div class="piano-key @(IsBlackKey(key) ? "black-key" : "white-key") @(isDetected ? "mic-detected" : null) @(isTarget ? "target" : null) @(isPressed ? "pressed" : null)">
-            @key
-        </div>
-    }
+            <div class="piano-key white-key @(isDetected ? "mic-detected" : null) @(isTarget ? "target" : null) @(isPressed ? "pressed" : null)">
+                @key.NoteName
+            </div>
+        }
+    </div>
+
+    <div class="black-keys-row">
+        @foreach (var key in blackKeys)
+        {
+            var isPressed = PressedKeys.Contains(key.NoteName);
+            var isDetected = IsDetected(key.NoteName);
+            var isTarget = IsTarget(key.NoteName);
+
+            <div class="piano-key black-key @(isDetected ? "mic-detected" : null) @(isTarget ? "target" : null) @(isPressed ? "pressed" : null)"
+                 style="left:@($"{key.LeftPercent:0.###}%");width:@($"{blackKeyWidthPercent:0.###}%");">
+                @key.NoteName
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -26,6 +42,15 @@
     [Parameter]
     public IReadOnlySet<string> PressedKeys { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    private List<KeyLayout> whiteKeys = [];
+    private List<BlackKeyLayout> blackKeys = [];
+    private double blackKeyWidthPercent;
+
+    protected override void OnParametersSet()
+    {
+        BuildLayout();
+    }
+
     private static bool IsBlackKey(string key)
         => key.Contains('#', StringComparison.Ordinal);
 
@@ -34,49 +59,101 @@
 
     private bool IsTarget(string key)
         => !string.IsNullOrWhiteSpace(TargetNote) && string.Equals(key, TargetNote, StringComparison.OrdinalIgnoreCase);
+
+    private void BuildLayout()
+    {
+        whiteKeys = Keys.Where(k => !IsBlackKey(k)).Select(k => new KeyLayout(k)).ToList();
+        blackKeys = [];
+
+        if (whiteKeys.Count == 0)
+        {
+            blackKeyWidthPercent = 0;
+            return;
+        }
+
+        var whiteWidthPercent = 100.0 / whiteKeys.Count;
+        blackKeyWidthPercent = whiteWidthPercent * 0.62;
+
+        var whiteCountSeen = 0;
+        foreach (var key in Keys)
+        {
+            if (!IsBlackKey(key))
+            {
+                whiteCountSeen++;
+                continue;
+            }
+
+            var left = (whiteCountSeen * whiteWidthPercent) - (blackKeyWidthPercent / 2.0);
+            left = Math.Clamp(left, 0.0, Math.Max(0.0, 100.0 - blackKeyWidthPercent));
+            blackKeys.Add(new BlackKeyLayout(key, left));
+        }
+    }
+
+    private sealed record KeyLayout(string NoteName);
+    private sealed record BlackKeyLayout(string NoteName, double LeftPercent);
 }
 
 <style>
     .piano-keyboard {
+        position: relative;
         width: 100%;
-        display: flex;
-        gap: 2px;
-        flex-wrap: nowrap;
+        max-width: 100%;
         margin-top: 8px;
         margin-bottom: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
+        overflow: hidden;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .white-keys-row {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 0;
+        width: 100%;
+        background: #e5e7eb;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .black-keys-row {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
     }
 
     .piano-key {
-        flex: 1 1 0;
-        min-width: 26px;
-        height: 112px;
-        border-radius: 0 0 4px 4px;
+        border: 1px solid #b8b8b8;
         display: flex;
         align-items: flex-end;
         justify-content: center;
         padding-bottom: 6px;
         font-size: 0.62rem;
-        border: 1px solid #b8b8b8;
         user-select: none;
-        touch-action: none;
         transition: background-color 80ms linear, box-shadow 80ms linear, transform 80ms linear;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .white-key {
+        min-height: 118px;
         background: #ffffff;
         color: #222;
+        border-right-width: 0;
+    }
+
+    .white-keys-row .white-key:last-child {
+        border-right-width: 1px;
     }
 
     .black-key {
-        background: #1f2937;
+        position: absolute;
+        top: 0;
+        min-height: 76px;
+        background: #111827;
         color: #f9fafb;
-        border-color: #111827;
-        height: 78px;
-        margin-left: -6px;
-        margin-right: -6px;
+        border-color: #0b1220;
         z-index: 2;
+        border-radius: 0 0 5px 5px;
     }
 
     .white-key.pressed {
@@ -101,5 +178,17 @@
 
     .piano-key.target {
         box-shadow: inset 0 0 0 2px #f97316;
+    }
+
+    @@media (max-width: 575.98px) {
+        .white-key {
+            min-height: 96px;
+            font-size: 0.55rem;
+        }
+
+        .black-key {
+            min-height: 62px;
+            font-size: 0.5rem;
+        }
     }
 </style>

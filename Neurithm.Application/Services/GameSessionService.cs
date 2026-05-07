@@ -8,6 +8,7 @@ public sealed class GameSessionService : IGameSessionService
     private const double PerfectWindowMs = 50.0;
     private const double GoodWindowMs = 100.0;
     private const double AcceptableWindowMs = 150.0;
+    private const double DetectionCompensationMs = 180.0;
 
     private readonly IHitDetectionService _hitDetectionService;
     private readonly IAdaptiveTempoService _adaptiveTempoService;
@@ -153,6 +154,7 @@ public sealed class GameSessionService : IGameSessionService
 
         _elapsedSongMs += deltaRawMs * _tempoMultiplier;
 
+        var missResolveWindowMs = GetMissResolveWindowMs();
         foreach (var state in _states)
         {
             if (state.IsResolved)
@@ -160,8 +162,8 @@ public sealed class GameSessionService : IGameSessionService
                 continue;
             }
 
-            var offset = _elapsedSongMs - state.StartTimeMs;
-            if (offset > AcceptableWindowMs)
+            var offset = ComputeNoteOffsetMs(_elapsedSongMs, state.StartTimeMs);
+            if (offset > missResolveWindowMs)
             {
                 state.ResolveAsMiss("Miss");
                 ApplyHitResult(new HitResult("Miss", offset, -1, false));
@@ -184,9 +186,11 @@ public sealed class GameSessionService : IGameSessionService
             return;
         }
 
+        var compensatedSongMs = BuildCompensatedSongTimeMs(_elapsedSongMs);
+
         var candidates = _states
             .Where(s => !s.IsResolved && string.Equals(s.Note.Note, detection.NoteName, StringComparison.OrdinalIgnoreCase))
-            .Select(s => new { State = s, Offset = _elapsedSongMs - s.StartTimeMs })
+            .Select(s => new { State = s, Offset = ComputeNoteOffsetMs(compensatedSongMs, s.StartTimeMs) })
             .OrderBy(x => Math.Abs(x.Offset))
             .ToList();
 
@@ -316,6 +320,15 @@ public sealed class GameSessionService : IGameSessionService
 
         return notes;
     }
+
+    private static double GetMissResolveWindowMs()
+        => AcceptableWindowMs + DetectionCompensationMs;
+
+    private static double BuildCompensatedSongTimeMs(double elapsedSongMs)
+        => Math.Max(0.0, elapsedSongMs - DetectionCompensationMs);
+
+    private static double ComputeNoteOffsetMs(double songTimeMs, double noteStartMs)
+        => songTimeMs - noteStartMs;
 
     private void ApplyHitResult(HitResult hit)
     {
