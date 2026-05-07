@@ -1357,3 +1357,26 @@ Anything outside that chain is secondary.
 - In-game detected note lighting should react faster to real piano input.
 - One piano only in game.
 - Less vertical scrolling during gameplay; controls/HUD stay lower and visible.
+
+## 47. Progress Update (Falling Notes Reach Bottom Hit Line)
+
+### Problem addressed
+
+- Falling notes were not consistently reaching the bottom blue hit line.
+
+### Completed in this step
+
+- Updated `GameSessionService.BuildVisuals()` to use shared helper-style math for note travel:
+  - `ComputeExactFallProgress(...)`
+  - `MaterializeBoundedTopPercent(...)`
+- Aligned visual note landing to hit zone by mapping in-window arrival near bottom line (`~96%`) and allowing controlled overflow tail.
+- Kept bounded clamping to avoid out-of-screen runaway positions.
+
+### Shared-first alignment
+
+- Exact movement math and bounded materialization are centralized in runtime service helpers.
+- UI components continue to orchestrate snapshot values without embedding movement logic.
+
+### Expected result
+
+- Falling notes now travel fully toward the bottom blue line and no longer appear to stop mid-screen.

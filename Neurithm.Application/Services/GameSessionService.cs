@@ -296,11 +296,8 @@ public sealed class GameSessionService : IGameSessionService
 
         foreach (var state in _states)
         {
-            var offsetMs = state.StartTimeMs - _elapsedSongMs;
-            var progress = (approachMs - offsetMs) / approachMs;
-            var easedProgress = EaseOutCubic(Math.Clamp(progress, -0.15, 1.3));
-            var top = (easedProgress * 112.0) - 8.0;
-            top = Math.Clamp(top, -14.0, 116.0);
+            var progress = ComputeExactFallProgress(_elapsedSongMs, state.StartTimeMs, approachMs);
+            var top = MaterializeBoundedTopPercent(progress);
 
             var durationRatio = state.DurationMs / approachMs;
             var height = Math.Clamp(durationRatio * 100.0, 4.0, 24.0);
@@ -321,6 +318,30 @@ public sealed class GameSessionService : IGameSessionService
         }
 
         return notes;
+    }
+
+    private static double ComputeExactFallProgress(double elapsedSongMs, double noteStartTimeMs, double approachMs)
+        => (approachMs - (noteStartTimeMs - elapsedSongMs)) / approachMs;
+
+    private static double MaterializeBoundedTopPercent(double progress)
+    {
+        const double topStartPercent = -12.0;
+        const double topAtHitLinePercent = 96.0;
+
+        if (progress <= 0.0)
+        {
+            return topStartPercent;
+        }
+
+        if (progress <= 1.0)
+        {
+            var eased = 1.0 - Math.Pow(1.0 - progress, 3.0);
+            var interpolated = topStartPercent + ((topAtHitLinePercent - topStartPercent) * eased);
+            return Math.Clamp(interpolated, -14.0, 120.0);
+        }
+
+        var overflowTail = (progress - 1.0) * 28.0;
+        return Math.Clamp(topAtHitLinePercent + overflowTail, -14.0, 120.0);
     }
 
     private static double GetMissResolveWindowMs()
