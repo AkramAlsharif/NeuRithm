@@ -1416,3 +1416,20 @@ Anything outside that chain is secondary.
 
 - Runtime pitch-detection helpers remain source of exact detection math and bounded materialization.
 - Page code remains skinny orchestration over shared services and snapshots.
+
+## 49. Progress Update (Home Reapply: Black Theme + Under-Title Play + Blue Arrows)
+
+### Reapplied request
+
+- Home background kept black.
+- Level card now shows a themed **Play** button directly under the selected song title.
+- Level navigation arrows restyled to blue theme.
+- Removed old start-selected-level flow in favor of per-level under-title play action.
+
+### Files touched
+
+- `Neurithm.Web/Pages/Home.razor`
+  - added `PlayCurrentLevelAsync()`
+  - added under-title themed play button with icon
+  - added blue arrow button styling
+  - preserved black home shell styling
