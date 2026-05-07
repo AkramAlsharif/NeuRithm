@@ -8,13 +8,15 @@
     }
     else
     {
-        @foreach (var note in Notes.Where(n => !n.IsResolved || n.TopPercent < 105))
+        @foreach (var note in Notes.Where(ShouldRenderNote))
         {
-            var laneLeft = LaneToLeftPercent(note.LaneIndex);
-            var laneWidth = LaneWidthPercent();
-            <div class="falling-note @(note.IsInsideHitWindow ? "in-window" : null) @(note.IsMissed ? "missed" : null) @(note.IsResolved && !note.IsMissed ? "resolved" : null)"
-                 style="top:@($"{note.TopPercent:0.##}%");left:@($"{laneLeft:0.###}%");width:@($"{laneWidth:0.###}%");height:@($"{note.HeightPercent:0.##}%")"
+            <div class="@BuildNoteCss(note)"
+                 style="@BuildNoteStyle(note)"
                  title="@note.Feedback">
+                @if (IsPerfectFeedback(note.Feedback))
+                {
+                    <div class="falling-note-perfect-badge">PERFECT</div>
+                }
                 @note.NoteName
             </div>
         }
@@ -26,6 +28,45 @@
     public IReadOnlyList<FallingNoteVisual> Notes { get; set; } = [];
 
     private const int LaneCount = 61;
+
+    private static bool ShouldRenderNote(FallingNoteVisual note)
+        => !note.IsResolved || note.TopPercent < 105;
+
+    private static string BuildNoteCss(FallingNoteVisual note)
+    {
+        var classes = new List<string> { "falling-note" };
+
+        if (note.IsInsideHitWindow)
+        {
+            classes.Add("in-window");
+        }
+
+        if (note.IsMissed)
+        {
+            classes.Add("missed");
+        }
+        else if (note.IsResolved)
+        {
+            classes.Add("resolved");
+        }
+
+        if (IsPerfectFeedback(note.Feedback))
+        {
+            classes.Add("perfect-hit");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private static string BuildNoteStyle(FallingNoteVisual note)
+    {
+        var laneLeft = LaneToLeftPercent(note.LaneIndex);
+        var laneWidth = LaneWidthPercent();
+        return $"transform:translate3d(0,{note.TopPercent:0.###}%,0);left:{laneLeft:0.###}%;width:{laneWidth:0.###}%;height:{note.HeightPercent:0.##}%;";
+    }
+
+    private static bool IsPerfectFeedback(string feedback)
+        => !string.IsNullOrWhiteSpace(feedback) && feedback.StartsWith("Perfect", StringComparison.OrdinalIgnoreCase);
 
     private static double LaneToLeftPercent(int laneIndex)
     {
@@ -49,6 +90,7 @@
 
     .falling-note {
         position: absolute;
+        top: 0;
         border-radius: 4px;
         border: 1px solid #8b5cf6;
         background: linear-gradient(180deg, rgba(147, 51, 234, 0.95), rgba(109, 40, 217, 0.95));
@@ -58,11 +100,12 @@
         justify-content: center;
         font-size: 0.55rem;
         font-weight: 600;
-        transition: top 0.05s linear;
         white-space: nowrap;
-        overflow: hidden;
+        overflow: visible;
         text-overflow: ellipsis;
         box-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+        will-change: transform;
+        backface-visibility: hidden;
     }
 
     .falling-note.in-window {
@@ -78,5 +121,24 @@
         border-color: #ef4444;
         background: linear-gradient(180deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95));
         box-shadow: 0 0 10px rgba(239,68,68,0.85);
+    }
+
+    .falling-note-perfect-badge {
+        position: absolute;
+        bottom: calc(100% + 4px);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 2px 8px;
+        font-size: 0.52rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #fff;
+        background: linear-gradient(120deg, #ec4899, #60a5fa);
+        border: 2px solid transparent;
+        border-image: repeating-linear-gradient(135deg, #d8b4fe 0 6px, #c084fc 6px 12px) 1;
+        border-radius: 6px;
+        box-shadow: 0 0 10px rgba(216, 180, 254, 0.75);
+        pointer-events: none;
+        z-index: 4;
     }
 </style>

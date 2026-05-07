@@ -13,12 +13,14 @@
 <div class="game-page-shell">
     <h1>Game</h1>
 
-    <div class="top-controls d-flex gap-2 mb-2 flex-wrap">
-        <button class="btn btn-primary" @onclick="StartMicrophoneAsync" disabled="@isCapturing">Start Microphone</button>
-        <button class="btn btn-outline-secondary" @onclick="StopMicrophoneAsync" disabled="@(!isCapturing)">Stop Microphone</button>
-        <button class="btn btn-success" @onclick="StartLevelAsync" disabled="@(!levelLoaded)">Play</button>
-        <button class="btn btn-warning" @onclick="PauseLevelAsync" disabled="@(!snapshot.IsRunning)">Pause</button>
-        <button class="btn btn-info" @onclick="ResumeLevelAsync" disabled="@(!snapshot.IsPaused)">Resume</button>
+    <div class="top-controls-row">
+        <div class="top-controls d-flex gap-2 mb-2 flex-wrap">
+            <button class="btn btn-primary" @onclick="StartMicrophoneAsync" disabled="@isCapturing">Start Microphone</button>
+            <button class="btn btn-outline-secondary" @onclick="StopMicrophoneAsync" disabled="@(!isCapturing)">Stop Microphone</button>
+            <button class="btn btn-success" @onclick="StartLevelAsync" disabled="@(!levelLoaded)">Play</button>
+            <button class="btn btn-warning" @onclick="PauseLevelAsync" disabled="@(!snapshot.IsRunning)">Pause</button>
+            <button class="btn btn-info" @onclick="ResumeLevelAsync" disabled="@(!snapshot.IsPaused)">Resume</button>
+        </div>
     </div>
 
     <div class="level-pick mb-2">
@@ -50,7 +52,7 @@
             PermissionStatus="@permissionStatus"
             LastError="@lastError"
             IsCapturing="@isCapturing"
-            DetectedNote="@snapshot.CurrentDetectedNote"
+            DetectedNote="@liveDetectedNote"
             FrequencyHz="@lastDetectedFrequencyHz"
             Reliability="@lastDetectedReliability" />
     </div>
@@ -60,7 +62,7 @@
         <p class="small">Play a real piano key. If mic detection is synced, the matching on-screen key lights up below.</p>
         <Neurithm.Web.Components.PianoKeyboard
             Keys="extendedKeys"
-            ActiveNote="@snapshot.CurrentDetectedNote"
+            ActiveNote="@liveDetectedNote"
             TargetNote="null" />
     </div>
 
@@ -76,7 +78,7 @@
 
     <Neurithm.Web.Components.PianoKeyboard
         Keys="extendedKeys"
-        ActiveNote="snapshot.CurrentDetectedNote"
+        ActiveNote="@liveDetectedNote"
         TargetNote="snapshot.CurrentTargetNote" />
 
     @if (snapshot.IsCompleted)
@@ -106,6 +108,8 @@
 
     private double lastDetectedFrequencyHz;
     private string lastDetectedReliability = "--";
+
+    private string liveDetectedNote = "--";
 
     private IReadOnlyList<Neurithm.Web.Models.LevelSummary> availableLevels = [];
 
@@ -322,6 +326,10 @@
         lastDetectedFrequencyHz = detection.FrequencyHz;
         lastDetectedReliability = detection.IsReliable ? "Reliable" : "Unreliable";
 
+        liveDetectedNote = detection.IsReliable && !string.IsNullOrWhiteSpace(detection.NoteName)
+            ? detection.NoteName
+            : "--";
+
         GameSessionService.RegisterDetection(detection);
         snapshot = GameSessionService.GetSnapshot();
         return InvokeAsync(StateHasChanged);
@@ -429,6 +437,11 @@
         padding: 12px;
     }
 
+    .top-controls-row {
+        margin-top: 18px;
+        margin-bottom: 10px;
+    }
+
     .top-controls,
     .level-pick,
     .mic-sync-test,
@@ -484,6 +497,10 @@
     @@media (max-width: 575.98px) {
         .game-page-shell {
             padding: 8px;
+        }
+
+        .top-controls-row {
+            margin-top: 12px;
         }
 
         .top-controls .btn {

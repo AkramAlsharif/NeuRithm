@@ -1250,3 +1250,36 @@ Anything outside that chain is secondary.
 
 - Correctly timed real-note hits should score instead of being incorrectly marked miss.
 - Piano now appears continuous and visually improved (no holes) while still lighting the detected note.
+
+## 44. Progress Update (Smooth Falling Notes + In-Game Perfect Visual Feedback)
+
+### Problem addressed
+
+- Falling notes looked laggy.
+- Play/Pause/Resume controls needed to be lower.
+- In-game real-note lighting needed to stay aligned and visible.
+- User requested clear PERFECT feedback above correctly hit notes with pink/blue style and light-purple zigzag outline.
+
+### Completed in this step
+
+- `FallingNotes.razor`
+  - Refactored render path to shared helper-style orchestration:
+    - `ShouldRenderNote(...)`
+    - `BuildNoteCss(...)`
+    - `BuildNoteStyle(...)`
+    - `IsPerfectFeedback(...)`
+  - Switched note motion styling to transform-based positioning (`translate3d`) with `will-change` for smoother rendering.
+  - Added per-note `PERFECT` badge above perfect-resolved notes.
+  - Styled badge with pink + blue gradient and light-purple zigzag-style border effect.
+- `Game.razor`
+  - Moved top control row lower (`top-controls-row` spacing).
+  - Unified live mic-lit key source with `liveDetectedNote` for both sync keyboard and gameplay keyboard.
+  - Microphone status panel now also reflects `liveDetectedNote` directly.
+- `GameSessionService` from prior step remains in effect with timing compensation to reduce false misses.
+
+### Expected result
+
+- Falling notes should render more smoothly.
+- Buttons appear lower and cleaner in the layout.
+- Correctly timed real-note hits show strong visual confirmation, including `PERFECT` above the note.
+- In-game piano key lighting tracks live reliable detection more consistently.
