@@ -33,7 +33,7 @@
 <style>
     .score-panel {
         position: sticky;
-        top: 0;
+        top: var(--score-panel-top, 0px);
         z-index: 100;
         display: grid;
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -44,5 +44,12 @@
         background: rgba(20, 4, 35, 0.92);
         color: #f5edff;
         box-shadow: 0 0 18px rgba(168,85,247,0.28);
+        margin-bottom: 8px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .score-panel {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
     }
 </style>

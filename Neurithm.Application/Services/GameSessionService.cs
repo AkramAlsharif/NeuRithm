@@ -291,20 +291,22 @@ public sealed class GameSessionService : IGameSessionService
             return [];
         }
 
-        const double approachMs = 3000.0;
+        const double approachMs = 3600.0;
         var notes = new List<FallingNoteVisual>(_states.Count);
 
         foreach (var state in _states)
         {
             var offsetMs = state.StartTimeMs - _elapsedSongMs;
             var progress = (approachMs - offsetMs) / approachMs;
-            var top = progress * 100.0;
-            top = Math.Clamp(top, -12.0, 120.0);
+            var easedProgress = EaseOutCubic(Math.Clamp(progress, -0.15, 1.3));
+            var top = (easedProgress * 112.0) - 8.0;
+            top = Math.Clamp(top, -14.0, 116.0);
 
             var durationRatio = state.DurationMs / approachMs;
             var height = Math.Clamp(durationRatio * 100.0, 4.0, 24.0);
 
-            var insideHitWindow = Math.Abs(_elapsedSongMs - state.StartTimeMs) <= AcceptableWindowMs;
+            var compensatedNow = BuildCompensatedSongTimeMs(_elapsedSongMs);
+            var insideHitWindow = Math.Abs(ComputeNoteOffsetMs(compensatedNow, state.StartTimeMs)) <= AcceptableWindowMs;
 
             notes.Add(new FallingNoteVisual(
                 NoteId: state.NoteId,
@@ -425,6 +427,13 @@ public sealed class GameSessionService : IGameSessionService
         }
 
         return (octave + 1) * 12 + semitone;
+    }
+
+    private static double EaseOutCubic(double t)
+    {
+        var clamped = Math.Clamp(t, 0.0, 1.0);
+        var inv = 1.0 - clamped;
+        return 1.0 - (inv * inv * inv);
     }
 
     private sealed class LevelNoteState

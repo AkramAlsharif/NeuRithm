@@ -38,7 +38,7 @@
         Combo="snapshot.Combo"
         AccuracyPercentage="snapshot.Accuracy"
         Misses="snapshot.Misses"
-        DetectedNote="snapshot.CurrentDetectedNote"
+        DetectedNote="liveDetectedNote"
         TargetNote="snapshot.CurrentTargetNote"
         TimingFeedback="snapshot.TimingFeedback"
         TempoMultiplier="snapshot.TempoMultiplier"
@@ -55,15 +55,6 @@
             DetectedNote="@liveDetectedNote"
             FrequencyHz="@lastDetectedFrequencyHz"
             Reliability="@lastDetectedReliability" />
-    </div>
-
-    <div class="mic-sync-test mb-2">
-        <h5>Mic Sync Test (Real Piano)</h5>
-        <p class="small">Play a real piano key. If mic detection is synced, the matching on-screen key lights up below.</p>
-        <Neurithm.Web.Components.PianoKeyboard
-            Keys="extendedKeys"
-            ActiveNote="@liveDetectedNote"
-            TargetNote="null" />
     </div>
 
     <Neurithm.Web.Components.CountdownOverlay
@@ -326,7 +317,7 @@
         lastDetectedFrequencyHz = detection.FrequencyHz;
         lastDetectedReliability = detection.IsReliable ? "Reliable" : "Unreliable";
 
-        liveDetectedNote = detection.IsReliable && !string.IsNullOrWhiteSpace(detection.NoteName)
+        liveDetectedNote = !string.IsNullOrWhiteSpace(detection.NoteName) && detection.NoteName != "--"
             ? detection.NoteName
             : "--";
 
@@ -434,17 +425,17 @@
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
-        padding: 12px;
+        padding: 14px 12px 12px;
+        --score-panel-top: 74px;
     }
 
     .top-controls-row {
-        margin-top: 18px;
+        margin-top: 26px;
         margin-bottom: 10px;
     }
 
     .top-controls,
     .level-pick,
-    .mic-sync-test,
     .three-visuals-host {
         width: 100%;
         max-width: 100%;
@@ -457,19 +448,11 @@
 
     .mic-corner-panel {
         position: fixed;
-        top: 10px;
+        top: 72px;
         right: 10px;
         width: min(280px, calc(100vw - 20px));
         max-width: calc(100vw - 20px);
         z-index: 120;
-    }
-
-    .mic-sync-test {
-        border: 1px solid rgba(168,85,247,0.45);
-        border-radius: 8px;
-        padding: 10px;
-        background: rgba(20, 4, 35, 0.78);
-        box-shadow: 0 0 16px rgba(168,85,247,0.22);
     }
 
     .three-visuals-host {
@@ -486,6 +469,10 @@
     }
 
     @@media (max-width: 991.98px) {
+        .game-page-shell {
+            --score-panel-top: 0px;
+        }
+
         .mic-corner-panel {
             position: static;
             width: 100%;
@@ -496,11 +483,11 @@
 
     @@media (max-width: 575.98px) {
         .game-page-shell {
-            padding: 8px;
+            padding: 10px 8px;
         }
 
         .top-controls-row {
-            margin-top: 12px;
+            margin-top: 14px;
         }
 
         .top-controls .btn {

@@ -1152,7 +1152,7 @@ Anything outside that chain is secondary.
 - Added stricter bounded gates:
   - minimum autocorrelation peak threshold
   - existing low-pass + piano-range + between-key cent bounds retained
-- Kept feature layer skinny: calibration/game continue orchestrating detector calls without embedding detection math.
+- Kept feature layer skinny and centralized orchestration in page/game layers.
 
 ### Dynamic runtime options added
 
@@ -1283,3 +1283,41 @@ Anything outside that chain is secondary.
 - Buttons appear lower and cleaner in the layout.
 - Correctly timed real-note hits show strong visual confirmation, including `PERFECT` above the note.
 - In-game piano key lighting tracks live reliable detection more consistently.
+
+## 45. Progress Update (Single In-Game Piano + Smoother Fall + Lower Controls/HUD)
+
+### Problem addressed
+
+- Game had two piano sections; needed one unified piano in gameplay.
+- Falling notes appeared laggy and sometimes looked like they stopped mid-screen.
+- Controls/HUD needed to sit lower for better visibility while playing.
+- Detected note lighting needed to remain active in-game.
+
+### Completed in this step
+
+- `Game.razor`
+  - Removed duplicate in-game sync piano block and kept one gameplay piano only.
+  - Kept live note lighting source unified from `liveDetectedNote`.
+  - Lowered controls area and mic corner panel placement.
+  - Added responsive score-panel offset variable (`--score-panel-top`) for better in-play visibility.
+- `ScorePanel.razor`
+  - Sticky offset is now dynamic via CSS variable (page-controlled).
+  - Added responsive grid collapse for narrow screens.
+- `GameSessionService.cs`
+  - Smoothed falling note motion with exact helper math:
+    - eased progress (`EaseOutCubic`)
+    - extended approach window
+    - broader travel range to bottom hit region
+  - Hit-window visualization now uses compensated timing reference.
+
+### Shared-first alignment
+
+- Exact movement and timing math live in runtime service/helpers.
+- UI remains skinny orchestration over snapshot values.
+
+### Expected result
+
+- One piano only in game.
+- Notes travel smoothly through the full board and align better with hit area.
+- Play/Pause/Resume and HUD are lower and more visible while playing.
+- Detected note highlight stays active on the in-game piano.
