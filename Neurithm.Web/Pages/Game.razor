@@ -23,16 +23,6 @@
         </div>
     </div>
 
-    <div class="level-pick mb-2">
-        <label class="form-label text-light">Level</label>
-        <select class="form-select" value="@selectedLevelId" @onchange="OnLevelChangedAsync">
-            @foreach (var level in availableLevels)
-            {
-                <option value="@level.Id">@level.Title (@level.Difficulty, @level.Bpm BPM)</option>
-            }
-        </select>
-    </div>
-
     <Neurithm.Web.Components.ScorePanel
         Score="snapshot.Score"
         Combo="snapshot.Combo"
@@ -440,7 +430,6 @@
     }
 
     .top-controls,
-    .level-pick,
     .three-visuals-host {
         width: 100%;
         max-width: 100%;
@@ -450,15 +439,6 @@
         min-width: 0;
         flex: 1 1 130px;
         padding-block: 0.35rem;
-    }
-
-    .level-pick {
-        max-width: min(420px, 100%);
-        margin-bottom: 6px !important;
-    }
-
-    .level-pick .form-label {
-        margin-bottom: 0.25rem;
     }
 
     .mic-corner-panel {

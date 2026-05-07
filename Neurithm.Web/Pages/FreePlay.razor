@@ -1,6 +1,135 @@
 @page "/free-play"
+@implements IAsyncDisposable
+@inject Neurithm.Audio.IMicrophoneService MicrophoneService
+@inject Neurithm.Web.Services.IClientLogService ClientLogService
 
 <PageTitle>Free Play</PageTitle>
 
 <h1>Free Play</h1>
-<p>Play your real piano freely. Detected notes will be shown here in the next step.</p>
+<p>Play your real piano. Detected notes light up on the keyboard below.</p>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <button class="btn btn-primary" @onclick="StartMicAsync" disabled="@isCapturing">Start Microphone</button>
+    <button class="btn btn-outline-secondary" @onclick="StopMicAsync" disabled="@(!isCapturing)">Stop Microphone</button>
+</div>
+
+<Neurithm.Web.Components.MicrophoneStatusPanel
+    PermissionStatus="@permissionStatus"
+    LastError="@lastError"
+    IsCapturing="@isCapturing"
+    DetectedNote="@activeNote"
+    FrequencyHz="@frequencyHz"
+    Reliability="@reliability" />
+
+<div class="mt-2">
+    <Neurithm.Web.Components.PianoKeyboard Keys="extendedKeys" ActiveNote="@activeNote" />
+</div>
+
+@code {
+    private bool isCapturing;
+    private string permissionStatus = "Not requested";
+    private string? lastError;
+
+    private string activeNote = "--";
+    private double frequencyHz;
+    private string reliability = "Unreliable";
+
+    private static readonly IReadOnlyList<string> extendedKeys = BuildKeys("C2", "C7");
+
+    protected override Task OnInitializedAsync()
+    {
+        MicrophoneService.DetectionAvailable += OnDetectionAvailableAsync;
+        return Task.CompletedTask;
+    }
+
+    private async Task StartMicAsync()
+    {
+        var permission = await MicrophoneService.RequestPermissionAsync();
+        permissionStatus = ToDisplay(permission.Status);
+        lastError = permission.ErrorMessage;
+
+        if (permission.Status != Neurithm.Audio.MicrophonePermissionStatus.Granted)
+        {
+            await ClientLogService.WriteAsync("FreePlay", $"Microphone blocked: {permissionStatus} ({lastError ?? "n/a"})");
+            return;
+        }
+
+        await MicrophoneService.StartCaptureAsync((_, _) => Task.CompletedTask);
+        isCapturing = MicrophoneService.IsCapturing;
+        await ClientLogService.WriteAsync("FreePlay", isCapturing ? "Microphone capture started" : $"Microphone failed: {MicrophoneService.LastError ?? "unknown"}");
+    }
+
+    private async Task StopMicAsync()
+    {
+        await MicrophoneService.StopCaptureAsync();
+        isCapturing = MicrophoneService.IsCapturing;
+        await ClientLogService.WriteAsync("FreePlay", "Microphone capture stopped");
+    }
+
+    private Task OnDetectionAvailableAsync(Neurithm.Audio.DetectedNoteResult detection)
+    {
+        frequencyHz = detection.FrequencyHz;
+        reliability = detection.IsReliable ? "Reliable" : "Unreliable";
+        activeNote = !string.IsNullOrWhiteSpace(detection.NoteName) && detection.NoteName != "--"
+            ? detection.NoteName
+            : "--";
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private static string ToDisplay(Neurithm.Audio.MicrophonePermissionStatus status)
+        => status switch
+        {
+            Neurithm.Audio.MicrophonePermissionStatus.NotRequested => "Not requested",
+            Neurithm.Audio.MicrophonePermissionStatus.Granted => "Granted",
+            Neurithm.Audio.MicrophonePermissionStatus.Denied => "Denied",
+            Neurithm.Audio.MicrophonePermissionStatus.Blocked => "Browser/HTTPS blocked",
+            Neurithm.Audio.MicrophonePermissionStatus.Error => "Error",
+            _ => "Unknown"
+        };
+
+    private static IReadOnlyList<string> BuildKeys(string startNote, string endNote)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        var result = new List<string>();
+
+        var start = NoteToMidi(startNote);
+        var end = NoteToMidi(endNote);
+
+        for (var midi = start; midi <= end; midi++)
+        {
+            var octave = (midi / 12) - 1;
+            var name = noteNames[(midi % 12 + 12) % 12];
+            result.Add($"{name}{octave}");
+        }
+
+        return result;
+    }
+
+    private static int NoteToMidi(string note)
+    {
+        var noteNames = new Dictionary<string, int>
+        {
+            ["C"] = 0, ["C#"] = 1, ["D"] = 2, ["D#"] = 3,
+            ["E"] = 4, ["F"] = 5, ["F#"] = 6, ["G"] = 7,
+            ["G#"] = 8, ["A"] = 9, ["A#"] = 10, ["B"] = 11
+        };
+
+        var pitch = note.Length >= 3 && note[1] == '#'
+            ? note[..2]
+            : note[..1];
+
+        var octavePart = note[pitch.Length..];
+        var octave = int.Parse(octavePart);
+        return (octave + 1) * 12 + noteNames[pitch];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        MicrophoneService.DetectionAvailable -= OnDetectionAvailableAsync;
+        if (isCapturing)
+        {
+            await MicrophoneService.StopCaptureAsync();
+        }
+    }
+}

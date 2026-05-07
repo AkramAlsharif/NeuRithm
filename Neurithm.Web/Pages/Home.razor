@@ -3,93 +3,136 @@
 @inject IMicrophoneService MicrophoneService
 @inject NavigationManager NavigationManager
 @inject Neurithm.Web.Services.IClientLogService ClientLogService
+@inject Neurithm.Web.Services.ILevelCatalogService LevelCatalogService
 
 <PageTitle>Neurithm</PageTitle>
 
 <h1>Neurithm</h1>
 <p class="lead">Train piano rhythm with your real instrument.</p>
 
-<div class="hero-buttons d-flex gap-2 flex-wrap">
-    <button class="btn btn-primary" @onclick="GoToGame">Start Playing</button>
-    <button class="btn btn-secondary" @onclick="RequestMicrophoneAccessAsync">Calibrate Microphone</button>
-    <button class="btn btn-info" @onclick="GoToLevelSelector">Choose Level</button>
-    <button class="btn btn-outline-dark" @onclick="GoToProfile">Profile</button>
-</div>
-
-<section class="mt-3">
+<section class="mb-3">
     <strong>Microphone status:</strong>
     <span>@microphonePermissionStatus</span>
 </section>
 
-<!-- How it works section -->
-<section>
-    <h2>How it works</h2>
-    <ol>
-        <li>Allow microphone access.</li>
-        <li>Play your real piano.</li>
-        <li>Match falling notes at the hit line.</li>
-        <li>Improve timing and tempo control.</li>
-    </ol>
-</section>
+<div class="hero-buttons d-flex gap-2 flex-wrap mb-3">
+    <button class="btn btn-primary" @onclick="StartSelectedLevelAsync" disabled="@(isLoadingLevels || levels.Count == 0)">Start Selected Level</button>
+    <button class="btn btn-info" @onclick="GoToFreePlay">Free Play</button>
+    <button class="btn btn-secondary" @onclick="RequestMicrophoneAccessAsync">Calibrate Microphone</button>
+    <button class="btn btn-outline-dark" @onclick="GoToProfile">Profile</button>
+</div>
 
-<!-- Game modes preview -->
-<section>
-    <h2>Game Modes</h2>
-    <ul>
-        <li>Practice Mode</li>
-        <li>Level Mode</li>
-        <li>Calibration Mode</li>
-        <li>Free Play Mode</li>
-    </ul>
-</section>
+<section class="level-browser">
+    <h2>Levels</h2>
 
-<!-- Quick stats preview (placeholder) -->
-<section>
-    <h2>Quick Stats</h2>
-    <ul>
-        <li>Last score: --</li>
-        <li>Best combo: --</li>
-        <li>Accuracy: --</li>
-        <li>Current selected character: --</li>
-    </ul>
-</section>
+    @if (isLoadingLevels)
+    {
+        <p><em>Loading levels...</em></p>
+    }
+    else if (levels.Count == 0)
+    {
+        <p>No levels found.</p>
+    }
+    else
+    {
+        var level = levels[selectedLevelIndex];
+        <div class="level-card border rounded p-3">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <button class="btn btn-outline-light" @onclick="ShowPreviousLevel" title="Previous level" aria-label="Previous level">←</button>
+                <div class="text-center flex-grow-1">
+                    <h4 class="mb-1">@level.Title</h4>
+                    <div class="small text-muted">@level.Composer</div>
+                </div>
+                <button class="btn btn-outline-light" @onclick="ShowNextLevel" title="Next level" aria-label="Next level">→</button>
+            </div>
 
-<!-- System status panel (placeholder) -->
-<section>
-    <h2>System Status</h2>
-    <ul>
-        <li>Microphone permission: @microphonePermissionStatus</li>
-        <li>Calibration status: --</li>
-        <li>Selected profile: --</li>
-        <li>Available levels: --</li>
-    </ul>
+            <div class="small">
+                <div><strong>Difficulty:</strong> @level.Difficulty</div>
+                <div><strong>BPM:</strong> @level.Bpm</div>
+                <div><strong>Notes:</strong> @level.NoteCount</div>
+            </div>
+
+            <p class="mt-2 mb-0">@level.PreviewText</p>
+        </div>
+    }
 </section>
 
 @code {
     private string microphonePermissionStatus = "Not requested";
 
+    private IReadOnlyList<Neurithm.Web.Models.LevelSummary> levels = [];
+    private int selectedLevelIndex;
+    private bool isLoadingLevels = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            levels = await LevelCatalogService.GetLevelsAsync();
+            selectedLevelIndex = 0;
+        }
+        finally
+        {
+            isLoadingLevels = false;
+        }
+    }
+
+    private void ShowPreviousLevel()
+    {
+        if (levels.Count == 0)
+        {
+            return;
+        }
+
+        selectedLevelIndex = (selectedLevelIndex - 1 + levels.Count) % levels.Count;
+    }
+
+    private void ShowNextLevel()
+    {
+        if (levels.Count == 0)
+        {
+            return;
+        }
+
+        selectedLevelIndex = (selectedLevelIndex + 1) % levels.Count;
+    }
+
+    private async Task StartSelectedLevelAsync()
+    {
+        if (levels.Count == 0)
+        {
+            return;
+        }
+
+        var levelId = levels[selectedLevelIndex].Id;
+        await ClientLogService.WriteAsync("Home", $"Navigating to Game page with level '{levelId}'");
+        NavigationManager.NavigateTo($"/game?levelId={Uri.EscapeDataString(levelId)}");
+    }
+
     private async Task RequestMicrophoneAccessAsync()
     {
-        var granted = await MicrophoneService.RequestPermissionAsync();
-        microphonePermissionStatus = granted ? "Granted" : "Denied";
+        var permission = await MicrophoneService.RequestPermissionAsync();
+        microphonePermissionStatus = permission.Status switch
+        {
+            MicrophonePermissionStatus.Granted => "Granted",
+            MicrophonePermissionStatus.Denied => "Denied",
+            MicrophonePermissionStatus.Blocked => "Browser/HTTPS blocked",
+            MicrophonePermissionStatus.Error => "Error",
+            _ => "Not requested"
+        };
+
         await ClientLogService.WriteAsync("Home", $"Microphone permission status changed to: {microphonePermissionStatus}");
 
-        if (granted)
+        if (permission.Status == MicrophonePermissionStatus.Granted)
         {
             NavigationManager.NavigateTo("/calibration");
         }
     }
 
-    private async Task GoToGame()
+    private async Task GoToFreePlay()
     {
-        await ClientLogService.WriteAsync("Home", "Navigating to Game page");
-        NavigationManager.NavigateTo("/game");
-    }
-
-    private async Task GoToLevelSelector()
-    {
-        await ClientLogService.WriteAsync("Home", "Navigating to Level Selector page");
-        NavigationManager.NavigateTo("/level-selector");
+        await ClientLogService.WriteAsync("Home", "Navigating to Free Play page");
+        NavigationManager.NavigateTo("/free-play");
     }
 
     private async Task GoToProfile()

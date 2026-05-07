@@ -1380,3 +1380,39 @@ Anything outside that chain is secondary.
 ### Expected result
 
 - Falling notes now travel fully toward the bottom blue line and no longer appear to stop mid-screen.
+
+## 48. Progress Update (Home Simplification + Arrow Levels + Free Play Piano + Game UI Cleanup)
+
+### User-requested scope completed
+
+- Removed requested text sections from Home:
+  - How it works
+  - Game Modes
+  - Quick Stats
+  - System Status
+- Added dynamic level browsing on Home with arrow navigation and start-selected-level flow.
+- Added functional Free Play page piano with real microphone note lighting.
+- Kept Game to one piano and removed in-game level select UI.
+- Reduced game page vertical chrome so player sees controls/HUD/gameplay with less scrolling.
+
+### Files updated
+
+- `Neurithm.Web/Pages/Home.razor`
+  - simplified home content
+  - arrow-based level card navigation
+  - start selected level directly into `/game?levelId=...`
+- `Neurithm.Web/Pages/FreePlay.razor`
+  - live mic capture controls
+  - note/frequency status panel
+  - piano keyboard light-up from real mic detections
+- `Neurithm.Web/Layout/NavMenu.razor`
+  - removed Level Selector nav item
+- `Neurithm.Web/Pages/Game.razor`
+  - removed in-game level selector block
+  - retained one in-game piano
+  - compacted/lowered game chrome for visibility
+
+### Shared-first alignment
+
+- Runtime pitch-detection helpers remain source of exact detection math and bounded materialization.
+- Page code remains skinny orchestration over shared services and snapshots.
